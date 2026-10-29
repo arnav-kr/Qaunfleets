@@ -10,3 +10,9 @@ Release checks performed on the exported Git staging tree:
 - Ruff lint and format checks passed; uv lockfile consistency checked.
 
 Recorded results demonstrate small-instance functionality, not physical hardware performance or quantum advantage. Full model retraining is outside the distributed reproduction package.
+
+## Stateful execution replay
+
+Twelve pipeline/replay tests cover immutable past power, actual early-departure shortfalls, occupied-bay exclusion, increased background load, accumulated energy cost, sequential events, revised deadlines, input immutability and fixed-rate charging with final partial slots. Existing 21 shipping checks remain passing.
+
+Browser replay on the recorded QCloud + Opt plan: V2 leaves at slot 14 with 6.48 kWh delivered and 12.96 kWh unmet; later bay and load events preserve history and return valid future allocations for the remaining vehicles. The interface reports five of six requests satisfied, physical validation separately, zero capacity violations, and the departed vehicle's shortfall. Desktop/mobile checks found no page errors or horizontal overflow.

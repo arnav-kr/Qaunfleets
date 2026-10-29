@@ -34,6 +34,7 @@ function selected() {
   return report.cases.find((x) => x.id === $("scenario").value);
 }
 function saved() {
+  $("slot").min = 0;
   stop();
   scenario = structuredClone(selected().scenario);
   $("solver").querySelector("[value=opt_qubo]").textContent =
@@ -70,9 +71,13 @@ function saved() {
 function render() {
   let ok = !!result.schedule?.length;
   $("slot").max = scenario.tariffs.length;
+  $("slot").min = result.replay?.slot ?? 0;
   $("play").disabled = !ok;
   $("slot").disabled = !ok;
-  $("failure").classList.toggle("hidden", ok);
+  $("failure").classList.toggle(
+    "hidden",
+    (ok && !result.replay) || !!result.validated,
+  );
   $("failure").textContent = (result.reasons || ["No accepted schedule."]).join(
     " ",
   );
@@ -81,8 +86,15 @@ function render() {
   [
     [
       "Ready by departure",
-      ok ? result.schedule.length + "/" + scenario.vehicles.length : "—",
-      "Planned for the full shift",
+      ok
+        ? (result.validation_report?.confirmed_ready ??
+            result.schedule.length) +
+          "/" +
+          scenario.vehicles.length
+        : "—",
+      result.replay
+        ? "Executed history + future plan"
+        : "Planned for the full shift",
     ],
     [
       "Site peak",
@@ -90,7 +102,9 @@ function render() {
       "Feeder limit " + scenario.capacity_kw + " kW",
     ],
     [
-      "Charging cost",
+      result.replay && !result.validated
+        ? "Cost of partial service"
+        : "Charging cost",
       money(result.incremental_bill),
       "Energy " +
         money(result.energy_cost) +
@@ -127,7 +141,12 @@ function render() {
       return [
         p.vehicle,
         p.charger,
-        time(p.start_slot) + "–" + time(p.end_slot),
+        (p.segments || [p])
+          .map(
+            (s) =>
+              s.charger + " " + time(s.start_slot) + "–" + time(s.end_slot),
+          )
+          .join("; ") || "No charging",
         time(v.deadline),
         f?.predicted_disconnect
           ? new Date(f.predicted_disconnect).toLocaleTimeString("en-GB", {
@@ -160,14 +179,16 @@ function playback(animate = false) {
     row.append(node("span", v.id));
     let track = node("div", undefined, "track"),
       p = result.schedule?.find((p) => p.vehicle === v.id);
-    if (p) {
-      let b = node("div", p.charger, "visit");
-      b.style.left = (p.start_slot / n) * 100 + "%";
-      b.style.width = ((p.end_slot - p.start_slot) / n) * 100 + "%";
-      track.append(b);
-    }
+    if (p)
+      for (const segment of p.segments || [p]) {
+        let b = node("div", segment.charger, "visit");
+        b.style.left = (segment.start_slot / n) * 100 + "%";
+        b.style.width =
+          ((segment.end_slot - segment.start_slot) / n) * 100 + "%";
+        track.append(b);
+      }
     let deadline = node("div", undefined, "deadline");
-    deadline.style.left = (v.deadline / n) * 100 + "%";
+    deadline.style.left = ((v.actual_departure ?? v.deadline) / n) * 100 + "%";
     let cursor = node("div", undefined, "cursor");
     cursor.style.left = (slot / n) * 100 + "%";
     track.append(deadline, cursor);
@@ -286,7 +307,9 @@ function renderSummary() {
         let segment = node("i");
         segment.classList.toggle(
           "filled",
-          !!result.schedule?.some((p) => p.vehicle === v.id),
+          !!result.schedule?.some(
+            (p) => p.vehicle === v.id && p.battery_kwh >= v.kwh - 1e-5,
+          ),
         );
         bar.append(segment);
       }
@@ -336,9 +359,9 @@ function renderRoster(slot) {
       ? "No plan"
       : slot < v.arrival
         ? "Not arrived"
-        : slot >= v.deadline
+        : slot >= (v.actual_departure ?? v.deadline)
           ? "Departed"
-          : slot >= p.start_slot && slot < p.end_slot
+          : (p.grid_kw_by_slot[slot] || 0) > 0
             ? "Charging"
             : energy >= v.kwh - 1e-6
               ? "Ready"
@@ -367,7 +390,11 @@ function renderRoster(slot) {
     let bottom = node("div", undefined, "fleet-row-bottom");
     bottom.append(
       node("span", num(energy) + " / " + num(v.kwh)),
-      node("span", "Departs " + time(v.deadline)),
+      node(
+        "span",
+        (v.actual_departure !== undefined ? "Left " : "Departs ") +
+          time(v.actual_departure ?? v.deadline),
+      ),
     );
     row.append(top, bar, bottom);
     $("roster").append(row);
@@ -432,7 +459,11 @@ function algorithm() {
     ["Bit", "Vehicle / charger / start", "Chosen"],
     (e.profile_menu || []).map((p) => [
       p.bit,
-      p.vehicle + " / " + p.charger + " / " + time(p.start_slot),
+      p.vehicle +
+        " / " +
+        p.charger +
+        " / " +
+        time(p.start_slot + (result.replay?.execution_slot_origin || 0)),
       attempt.bits[p.bit] > 0.5 ? "1 ✓" : "0",
     ]),
   );
@@ -446,7 +477,7 @@ function stop(freeze = true) {
 $("play").onclick = () => {
   if (timer) return stop();
   if (+$("slot").value >= scenario.tariffs.length) {
-    $("slot").value = 0;
+    $("slot").value = result.replay?.slot ?? 0;
     playback();
   }
   window.depotMotionPaused = false;

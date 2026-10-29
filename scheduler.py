@@ -118,6 +118,12 @@ def solve(data, predictions=None):
             kw = min(rates[j], maxkw)
             slots = math.ceil(e / (efficiency * kw * dt) - 1e-10)
             for s in range(a, d - slots + 1):
+                if any(
+                    block["charger"] == c["id"]
+                    and max(s, block["start"]) < min(s + slots, block["end"])
+                    for block in data.get("charger_blocks", [])
+                ):
+                    continue
                 load = np.zeros(n)
                 remaining = e / efficiency
                 for t in range(s, s + slots):

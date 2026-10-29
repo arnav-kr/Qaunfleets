@@ -6,7 +6,7 @@ function renderProof() {
   const strip = $("validation-strip");
   strip.replaceChildren();
   for (const text of [
-    ok ? "✓ Independently validated" : "No validated plan",
+    ok ? "✓ Physical checks passed" : "Physical checks failed / unavailable",
     audit
       ? audit.confirmed_ready +
         "/" +
@@ -16,10 +16,12 @@ function renderProof() {
     audit
       ? audit.capacity_violations + " capacity violations"
       : "Capacity unverified",
-    ok ? "✓ Charger and energy checks passed" : "Checks not passed",
+    result.validated
+      ? "All energy commitments met"
+      : "Service shortfall / no compliant plan",
   ])
     strip.append(node("span", text));
-  strip.classList.toggle("failed", !ok);
+  strip.classList.toggle("failed", !ok || !result.validated);
   const f = result.forecast_evidence || {},
     e = result.execution_evidence || {};
   const box = $("execution-path");
@@ -33,7 +35,9 @@ function renderProof() {
           ? "Classical predictor"
           : "Confirmed departures only",
       f.source === "qcloud"
-        ? f.backend + " · simulator"
+        ? f.backend +
+          " · simulator" +
+          (f.reused_at_event ? " · arrival prediction reused" : "")
         : "No quantum prediction in this run",
     ],
     [
@@ -47,7 +51,7 @@ function renderProof() {
     ],
     [
       "03 · Verify",
-      ok ? "Accepted charging plan" : "No accepted plan",
+      result.validated ? "Accepted charging plan" : "Service exception",
       Number.isFinite(result.seconds)
         ? result.seconds.toFixed(2) + " s scheduler runtime"
         : "Runtime unavailable",
@@ -70,6 +74,7 @@ function renderProof() {
     "small",
   );
   box.append(note);
+  renderReplay();
 }
 function renderTariff(slot) {
   if (!tariffChart) {
@@ -136,17 +141,20 @@ function renderEvents(slot) {
   }
   if (slot >= n) {
     el.textContent =
-      "Shift complete · vehicles have left at their confirmed departure times.";
+      "Shift complete · check reported departures and energy shortfalls.";
     return;
   }
   const load = result.aggregate_site_kw?.[slot];
   const pending = scenario.vehicles
-    .filter((v) => v.deadline > slot)
+    .filter((v) => (v.actual_departure ?? v.deadline) > slot)
     .sort((a, b) => a.deadline - b.deadline)[0];
   const done = result.schedule.filter(
     (p) =>
       p.end_slot <= slot &&
-      scenario.vehicles.find((v) => v.id === p.vehicle).deadline > slot,
+      p.battery_kwh >=
+        scenario.vehicles.find((v) => v.id === p.vehicle).kwh - 1e-5 &&
+      (scenario.vehicles.find((v) => v.id === p.vehicle).actual_departure ??
+        scenario.vehicles.find((v) => v.id === p.vehicle).deadline) > slot,
   ).length;
   for (const text of [
     num(scenario.capacity_kw - load) + " kW headroom",
@@ -172,49 +180,135 @@ nav.append(more);
 let eventBusy = false;
 async function replan(kind) {
   if (eventBusy) return;
+  stop();
+  const now = +$("slot").value,
+    horizon = scenario.tariffs.length;
+  if (now >= horizon) {
+    $("event-status").textContent =
+      "Choose a time before the end of the shift.";
+    return;
+  }
+  const vehicle = scenario.vehicles.find(
+    (v) => v.id === $("event-vehicle").value,
+  );
+  const duration = Math.ceil(60 / scenario.slot_minutes);
+  const event =
+    kind === "early"
+      ? { type: "depart_now", vehicle: vehicle.id }
+      : kind === "occupied"
+        ? {
+            type: "occupied",
+            charger: $("event-charger").value,
+            until: Math.min(horizon, now + duration),
+          }
+        : {
+            type: "load",
+            delta_kw: 8,
+            until: Math.min(horizon, now + duration),
+          };
   eventBusy = true;
-  const buttons = ["early-event", "surge-event", "reset-event"];
-  buttons.forEach((id) => ($(id).disabled = true));
+  const controls = [
+    "early-event",
+    "surge-event",
+    "occupied-event",
+    "reset-event",
+    "run",
+    "play",
+    "slot",
+    "scenario",
+    "solver",
+  ];
+  controls.forEach((id) => ($(id).disabled = true));
+  $("event-status").textContent =
+    "Applying event at " +
+    time(now) +
+    "; preserving delivered energy and replanning future slots…";
   try {
-    const d = structuredClone(scenario);
-    if (kind === "early") {
-      const v = d.vehicles.find((v) => v.id === "V1") || d.vehicles[0];
-      v.deadline = Math.max(
-        v.arrival + 1,
-        v.deadline - Math.ceil(60 / d.slot_minutes),
-      );
-      $("event-status").textContent =
-        v.id + " departure changed to " + time(v.deadline) + ". Replanning…";
-    } else {
-      const start = Math.min(+$("slot").value, d.tariffs.length - 1);
-      for (
-        let i = start;
-        i < Math.min(d.tariffs.length, start + Math.ceil(60 / d.slot_minutes));
-        i++
-      )
-        d.base_load_kw[i] += 8;
-      $("event-status").textContent =
-        "Building load increased by 8 kW from " + time(start) + ". Replanning…";
-    }
-    $("input").value = JSON.stringify(d, null, 2);
-    await $("run").onclick();
-    $("event-status").textContent = $("status").textContent.startsWith(
-      "Run failed",
-    )
-      ? "Replan failed. Previous plan retained."
-      : result.schedule?.length
-        ? "Updated plan accepted. Playback restarted."
-        : "No feasible plan accepted for this change. Reduce demand or revise the departure requirement.";
+    const response = await fetch("/replan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scenario, result, slot: now, event }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw Error(data.error || "Replan failed");
+    scenario = data.scenario;
+    result = data.result;
+    $("slot").value = now;
+    $("input").value = JSON.stringify(scenario, null, 2);
+    render();
+    $("status").textContent =
+      "Execution replay · " +
+      result.status +
+      " · future solver: " +
+      result.replay.future_solver_status;
+    $("event-status").textContent = result.replay.future_plan_found
+      ? "Future plan updated. Past charging and energy cost are unchanged."
+      : "No compliant future plan found. Future charging is held; unmet energy is shown below.";
+  } catch (error) {
+    $("event-status").textContent = "Event not applied: " + error.message;
   } finally {
     eventBusy = false;
-    buttons.forEach((id) => ($(id).disabled = false));
+    controls.forEach((id) => ($(id).disabled = false));
   }
+}
+function renderReplay() {
+  const selector = $("event-vehicle");
+  const selected = selector.value;
+  selector.replaceChildren();
+  for (const v of scenario.vehicles) {
+    const option = node("option", v.id);
+    option.value = v.id;
+    selector.append(option);
+  }
+  if ([...selector.options].some((o) => o.value === selected))
+    selector.value = selected;
+  const chargers = $("event-charger");
+  const current = chargers.value;
+  chargers.replaceChildren();
+  for (const c of scenario.chargers) {
+    const o = node("option", c.id);
+    o.value = c.id;
+    chargers.append(o);
+  }
+  if ([...chargers.options].some((o) => o.value === current))
+    chargers.value = current;
+  const replay = result.replay;
+  const panel = $("replay-results");
+  panel.classList.toggle("hidden", !replay);
+  if (!replay) return;
+  $("replay-cost").textContent =
+    "Executed through " +
+    time(replay.slot) +
+    " · energy cost incurred " +
+    money(replay.realized_energy_cost) +
+    " · peak reached " +
+    num(replay.historical_peak_kw) +
+    " kW";
+  table(
+    "shortfalls",
+    [
+      "Vehicle",
+      "Delivered at event",
+      "Required",
+      "Unmet in plan",
+      "Short at departure",
+    ],
+    replay.service.map((v) => [
+      v.vehicle,
+      num(v.delivered_so_far_kwh) + " kWh",
+      num(v.required_kwh) + " kWh",
+      num(v.shortfall_kwh) + " kWh",
+      v.departed ? num(v.realized_shortfall_kwh) + " kWh" : "Not departed",
+    ]),
+  );
 }
 $("early-event").onclick = () => replan("early");
 $("surge-event").onclick = () => replan("surge");
+$("occupied-event").onclick = () => replan("occupied");
 $("reset-event").onclick = () => {
   $("scenario").value = "tariff_and_peak";
   $("solver").value = "opt_qubo";
   saved();
-  $("event-status").textContent = "Original recorded plan restored.";
+  $("event-status").textContent =
+    "Original recorded plan restored; execution history reset.";
 };

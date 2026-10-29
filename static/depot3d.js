@@ -449,6 +449,14 @@ function update(data, plan, slot, formatTime, animateMotion = false) {
   vehicles.forEach((v) => {
     let spec = data.vehicles.find((s) => s.id === v.id),
       p = plan.schedule?.find((p) => p.vehicle === v.id);
+    if (p?.charger_by_slot)
+      p = {
+        ...p,
+        charger:
+          p.charger_by_slot[slot] ||
+          p.segments.find((s) => s.end_slot > slot)?.charger ||
+          "Unassigned",
+      };
     v.p = p;
     v.cable = null;
     v.energy = p
@@ -457,14 +465,15 @@ function update(data, plan, slot, formatTime, animateMotion = false) {
           60) *
         data.efficiency
       : 0;
-    v.charging = !!p && slot >= p.start_slot && slot < p.end_slot;
+    v.charging = !!p && (p.grid_kw_by_slot[slot] || 0) > 0;
     let ready = !!p && v.energy >= spec.kwh - 1e-6,
-      offsite = slot < spec.arrival || slot >= spec.deadline;
+      offsite =
+        slot < spec.arrival || slot >= (spec.actual_departure ?? spec.deadline);
     v.state = !p
       ? "No plan"
       : slot < spec.arrival
         ? "Not arrived"
-        : slot >= spec.deadline
+        : slot >= (spec.actual_departure ?? spec.deadline)
           ? "Dispatched"
           : v.charging
             ? "Charging"
@@ -474,7 +483,7 @@ function update(data, plan, slot, formatTime, animateMotion = false) {
     let bay = chargers.find((c) => c.id === p?.charger);
     const target =
       v.charging && bay ? new THREE.Vector3(bay.x, 0, bay.z) : v.park.clone();
-    const departure = slot >= spec.deadline,
+    const departure = slot >= (spec.actual_departure ?? spec.deadline),
       entered = !offsite && !v.wasOnsite;
     const canAnimate =
       animateMotion && !matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -568,13 +577,21 @@ function update(data, plan, slot, formatTime, animateMotion = false) {
   });
   chargers.forEach((c) => {
     let active = vehicles.some((v) => v.charging && v.p.charger === c.id);
-    c.lamp.material.emissiveIntensity = active ? 2 : 0;
+    const occupied = (data.charger_blocks || []).some(
+      (b) => b.charger === c.id && b.start <= slot && slot < b.end,
+    );
+    c.lamp.material.emissive.set(occupied ? "#d98c22" : "#6fb86d");
+    c.lamp.material.emissiveIntensity = occupied ? 3 : active ? 2 : 0;
   });
   let load = plan.aggregate_site_kw?.[slot];
+  const blocked = (data.charger_blocks || [])
+    .filter((b) => b.start <= slot && slot < b.end)
+    .map((b) => b.charger);
   hud.textContent =
     load === undefined
       ? "End of planning horizon"
       : load.toFixed(1) + " / " + data.capacity_kw + " kW";
+  if (blocked.length) hud.textContent += " · Occupied: " + blocked.join(", ");
   updateDetail();
   loading.classList.add("hidden");
   host.dataset.ready = "true";
