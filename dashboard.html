@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="icon" href="data:," />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Qaunfleets · Fleet operations</title>
+    <link rel="stylesheet" href="/static/dashboard.css" />
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <span>◈</span> Qaunfleets
+        <small class="small">/ fleet operations</small>
+      </div>
+      <span class="tag">QML–02 · Fleet charging</span>
+    </header>
+    <div class="layout">
+      <aside>
+        <nav>
+          <button class="active" data-tab="depot">◫ &nbsp; Overview</button
+          ><button data-tab="algorithm">◇ &nbsp; Model details</button
+          ><button data-tab="benchmarks">▥ &nbsp; Compare runs</button
+          ><button data-tab="pitch">↗ &nbsp; Presentation</button>
+        </nav>
+        <div class="aside-note">
+          <span class="live-dot"></span>Local workspace<br /><br />Synthetic
+          depot<br />Simulation only
+        </div>
+      </aside>
+      <main>
+        <div class="eyebrow">DEPOT OPERATIONS</div>
+        <h1>Overnight charging</h1>
+        <p>Your fleet, ready for the next shift.</p>
+        <div class="toolbar">
+          <label>Scenario<select id="scenario"></select></label
+          ><button class="primary" id="run">Run plan ↗</button
+          ><button id="download">Export run ↓</button>
+          <details class="settings">
+            <summary>Plan settings</summary>
+            <div class="settings-content">
+              <label
+                >Optimization method<select id="solver">
+                  <option value="opt_qubo">
+                    QpiAI Opt · QUBO / 4 choices per van
+                  </option>
+                  <option value="same_menu_classical">
+                    Classical · Same choice menu
+                  </option>
+                  <option value="full_classical">
+                    Classical · All valid visits
+                  </option>
+                  <option value="qcloud_qaoa">
+                    QCloud · QAOA / circuit demo only
+                  </option>
+                  <option value="earliest_departure">
+                    Earliest-departure heuristic
+                  </option>
+                </select></label
+              ><label
+                >Departure prediction<select id="forecast">
+                  <option value="none">Confirmed deadlines only</option>
+                  <option value="qcloud">QCloud · Quantum features</option>
+                  <option value="classical">Classical ML control</option>
+                </select></label
+              >
+            </div>
+          </details>
+        </div>
+        <div id="status" role="status">Loading recorded, verified runs…</div>
+        <section id="depot" class="tab">
+          <div class="metrics" id="metrics"></div>
+          <div
+            id="validation-strip"
+            class="validation-strip"
+            role="status"
+          ></div>
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Quantum-assisted charging plan</h2>
+              <button id="inspect-method">Inspect execution →</button>
+            </div>
+            <div id="execution-path" class="execution-path"></div>
+          </div>
+          <div id="failure" class="notice hidden"></div>
+          <div class="panel scene-panel">
+            <div class="panel-head">
+              <div>
+                <h2>Depot view</h2>
+                <span class="small"
+                  >Schedule playback · delivered top-up energy</span
+                >
+              </div>
+              <span class="pill" id="scene-count"></span>
+            </div>
+            <div class="depot-layout">
+              <div><div id="fleet"></div></div>
+              <div class="fleet-roster">
+                <div class="roster-heading">
+                  Vehicles <span class="small">kWh delivered / required</span>
+                </div>
+                <div id="roster"></div>
+              </div>
+            </div>
+            <div id="event-summary" class="event-summary"></div>
+            <div class="controls">
+              <button id="play" aria-label="Play or pause schedule">▶</button
+              ><strong id="clock"></strong
+              ><input
+                id="slot"
+                type="range"
+                min="0"
+                max="28"
+                value="0"
+                step="1"
+                aria-label="Time slot"
+              /><span class="small">30 min / step</span>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Replan a changed shift</h2>
+                <span class="small"
+                  >What-if scenarios · recomputes the full horizon, not a live
+                  dispatch update</span
+                >
+              </div>
+            </div>
+            <div class="event-actions">
+              <button id="early-event">V1 departs 1 hour earlier</button
+              ><button id="surge-event">Building load +8 kW for 1 hour</button
+              ><button id="reset-event">Restore recorded plan</button>
+            </div>
+            <div id="event-status" role="status" class="small"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Electricity tariff</h2>
+              <span class="small">USD / kWh · same timeline as charging</span>
+            </div>
+            <div
+              id="tariff-chart"
+              style="height: 180px"
+              role="img"
+              aria-label="Electricity tariff per charging slot"
+            ></div>
+          </div>
+          <div class="split analytics">
+            <div class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Site demand</h2>
+                  <span class="small">Planned load · kW</span>
+                </div>
+                <span id="power" class="pill"></span>
+              </div>
+              <div
+                id="chart"
+                role="img"
+                aria-label="Planned site power, background load and feeder capacity"
+              ></div>
+              <div class="legend">
+                <span>Site demand</span><span class="base">Background load</span
+                ><span class="limit">Feeder limit</span>
+              </div>
+            </div>
+            <div class="panel cost-panel">
+              <h2>Charging cost</h2>
+              <div id="bill-total" class="bill-total"></div>
+              <div id="cost-bar" class="cost-bar"></div>
+              <div id="cost-breakdown"></div>
+              <div class="small cost-note">
+                Incremental EV charges · USD<br />Energy + demand above the
+                historical peak
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Charging schedule</h2>
+              <span class="small">Charging visit ━ · Departure deadline │</span>
+            </div>
+            <div id="gantt"></div>
+          </div>
+          <div class="panel">
+            <h2>Allocation details</h2>
+            <div class="scroll"><table id="ledger"></table></div>
+          </div>
+          <details class="notice">
+            <summary>Scenario assumptions</summary>
+            Confirmed dispatch times are hard constraints. An optional
+            prediction estimates unplug behaviour, not a new dispatch
+            commitment. The predictor was trained on workplace sessions; its use
+            in this constructed depot is experimental.
+          </details>
+          <details class="panel">
+            <summary>Edit the scenario for the next live run</summary>
+            <textarea id="input" aria-label="Scenario JSON"></textarea>
+            <p class="small">
+              Changing the JSON does not change the displayed plan until a
+              successful run. Departure and arrival fields are slot boundaries.
+              Prices use synthetic USD demo units.
+            </p>
+          </details>
+        </section>
+        <section id="algorithm" class="tab hidden">
+          <div class="panel">
+            <h2>One bit is one complete charging visit.</h2>
+            <p>
+              Start with physically valid choices. Each bit means “select this
+              vehicle, charger and start time.” Energy and confirmed deadlines
+              are built into every choice.
+            </p>
+            <div class="steps">
+              <div class="step">
+                <b>1 / Build choices</b>Enumerate valid visits; keep up to four
+                per vehicle including a feasible earliest-departure visit when
+                available, then cheap, early and late choices.
+              </div>
+              <div class="step">
+                <b>2 / Compile QUBO</b>Price the visits. Penalize
+                missing/duplicate choices, charger clashes and excess shared
+                load.
+              </div>
+              <div class="step">
+                <b>3 / Run Opt</b>Solve at each relevant peak ceiling. Keep
+                valid returned samples and compare their actual bills.
+              </div>
+              <div class="step">
+                <b>4 / Check independently</b>Recompute energy, occupancy,
+                deadlines, site power and bill from the returned plan.
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <h2>The equation we actually implement</h2>
+            <div class="formula">
+              E<sub>B</sub>(x,s) = Σ c<sub>k</sub>x<sub>k</sub><br />
+              + A Σ<sub>v</sub>(Σ<sub>k∈Kᵥ</sub>x<sub>k</sub> − 1)²<br />
+              + A Σ<sub>(k,l)∈C</sub>x<sub>k</sub>x<sub>l</sub><br />
+              + A Σ<sub>t</sub>(Σ w<sub>kt</sub>x<sub>k</sub> + s<sub>t</sub> −
+              K<sub>t</sub>(B))²
+            </div>
+            <p>
+              For each peak ceiling B: K is the available power in exact integer
+              units; slack s represents unused capacity. A is larger than the
+              largest possible feasible visit cost. The outer sweep compares
+              energy + incremental demand charges. Redundant rows are removed;
+              simple capacity conflicts are encoded directly.
+            </p>
+            <p class="small">
+              QUBO is an optimization formulation, not machine learning. This
+              local Opt execution is classical exact search or simulated
+              annealing. QCloud also executes depth-one QAOA for the six-bit
+              circuit demo; select that scenario and solver to inspect its
+              measurements.
+            </p>
+          </div>
+          <div class="panel">
+            <h2>Returned model and selected bits</h2>
+            <div id="modelmeta" class="small"></div>
+            <div class="two">
+              <div>
+                <canvas
+                  id="matrix"
+                  width="480"
+                  height="480"
+                  aria-label="QUBO coefficient matrix"
+                ></canvas>
+                <p class="small">
+                  Actual upper-triangular coefficients: mint positive, violet
+                  negative. Brightness uses log magnitude. Slack variables are
+                  included.
+                </p>
+              </div>
+              <div class="scroll"><table id="bits"></table></div>
+            </div>
+            <details>
+              <summary>
+                Every peak-ceiling attempt and raw execution evidence
+              </summary>
+              <pre id="evidence"></pre>
+            </details>
+          </div>
+          <div class="panel">
+            <h2>QCloud signal path</h2>
+            <p>
+              Six request-time inputs → angle encoding → RY / RZ gates → CX
+              entangling chain → RY → 512 measured shots → 6 Z and 6 ZZ features
+              → trained classical regression head → optional soft completion
+              preference.
+            </p>
+            <pre id="qcloud"></pre>
+          </div>
+        </section>
+        <section id="benchmarks" class="tab hidden">
+          <div class="panel">
+            <h2>Compare equal service before comparing price.</h2>
+            <p>
+              Recorded executions on frozen depot scenarios. “Same menu”
+              isolates the solver; “all visits” exposes the cost of reducing the
+              search space. These are small constructed examples, not evidence
+              of quantum advantage.
+            </p>
+            <div class="scroll"><table id="comparison"></table></div>
+          </div>
+          <div class="panel">
+            <h2>Four connected pipelines</h2>
+            <p>
+              Live-integration smoke tests with classical or QCloud features and
+              classical or Opt QUBO optimization. Prediction accuracy is
+              evaluated separately in the earlier research artifacts.
+            </p>
+            <div class="scroll"><table id="fourway"></table></div>
+            <p id="fournote" class="small"></p>
+          </div>
+          <div class="notice">
+            Do not equate a valid quantum-compatible formulation with a
+            demonstrated quantum speedup. Current limitations: reduced visit
+            menu, contiguous visits, idealized staff movement, synthetic depot
+            assumptions, workplace-to-fleet domain shift, finite-shot variation
+            and heuristic QUBO search.
+          </div>
+        </section>
+        <section id="pitch" class="tab hidden">
+          <div class="panel">
+            <h2>The demo story</h2>
+            <p>
+              Six delivery vans return to a depot. All must be ready for their
+              confirmed routes. Cheap overnight electricity is attractive, but
+              simultaneous charging creates a costly peak—or exceeds the feeder.
+              Qaunfleets turns those competing choices into a constrained,
+              auditable charging plan.
+            </p>
+            <ol>
+              <li>Show the confirmed commitments and the feeder limit.</li>
+              <li>
+                Play the QUBO schedule and pause during concurrent charging.
+              </li>
+              <li>
+                Open “Inside the QUBO” and connect a selected bit to its
+                charging visit.
+              </li>
+              <li>
+                Compare the same-menu classical result, then the full-menu
+                reference.
+              </li>
+              <li>
+                Run QCloud forecasts and explain where measured quantum features
+                enter the objective.
+              </li>
+              <li>
+                Finish with honest results, current limits and the next
+                experiment.
+              </li>
+            </ol>
+            <p>
+              <a href="/presentation" target="_blank"
+                >Open the complete slide outline, speaker script and judge Q&A
+                ↗</a
+              >
+            </p>
+          </div>
+        </section>
+        <div class="foot">
+          Qaunfleets research prototype · one continuous charging visit per
+          vehicle · all displayed amounts are incremental EV charges in
+          synthetic USD units.
+        </div>
+      </main>
+    </div>
+    <script src="/static/vendor/echarts.min.js"></script>
+    <script type="importmap">
+      { "imports": { "three": "/static/vendor/three.module.js" } }
+    </script>
+    <script>
+      function renderIsoDepot(...args) {
+        window.pendingDepot = args;
+        if (window.renderDepot3D) window.renderDepot3D(...args);
+      }
+    </script>
+    <script type="module" src="/static/depot3d.js"></script>
+    <script src="/static/app.js"></script>
+    <script src="/static/demo-focus.js"></script>
+  </body>
+</html>

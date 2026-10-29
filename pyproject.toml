@@ -1,0 +1,33 @@
+[project]
+name = "qaunfleets"
+version = "0.1.0"
+description = "Grid-constrained EV charging with QCloud features and QpiAI Opt QUBO scheduling"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = "AGPL-3.0-only"
+dependencies = [
+  "numpy==2.5.4",
+  "scipy==1.18.1",
+  "scikit-learn==1.9.1",
+  "joblib==1.6.0",
+  "python-dotenv==1.2.4",
+  "qpiai-opt==0.0.9",
+  "qpiai-quantum==0.7.5",
+]
+
+[dependency-groups]
+dev = ["ruff>=0.12", "pytest>=8"]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

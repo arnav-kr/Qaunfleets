@@ -1,0 +1,170 @@
+{
+  "schema_version": "depot-v1",
+  "scenario_id": "impossible_departure",
+  "start": "2026-10-29T18:00:00+05:30",
+  "timezone": "Asia/Calcutta",
+  "slot_minutes": 30,
+  "capacity_kw": 25.6,
+  "historic_peak_kw": 18.0,
+  "demand_rate": 8.0,
+  "efficiency": 0.9,
+  "risk_weight": 0.0,
+  "prediction_mode": "confirmed_only",
+  "backend": "highs",
+  "tariffs": [
+    0.32,
+    0.32,
+    0.32,
+    0.32,
+    0.32,
+    0.32,
+    0.32,
+    0.32,
+    0.18,
+    0.18,
+    0.18,
+    0.18,
+    0.1,
+    0.1,
+    0.1,
+    0.1,
+    0.1,
+    0.1,
+    0.1,
+    0.1,
+    0.22,
+    0.22,
+    0.22,
+    0.22,
+    0.22,
+    0.22,
+    0.22,
+    0.22
+  ],
+  "base_load_kw": [
+    10.0,
+    10.0,
+    10.0,
+    10.0,
+    10.0,
+    10.0,
+    10.0,
+    10.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    4.0,
+    8.0,
+    8.0,
+    8.0,
+    8.0
+  ],
+  "chargers": [
+    {
+      "id": "C1",
+      "kw": 7.2
+    },
+    {
+      "id": "C2",
+      "kw": 7.2
+    },
+    {
+      "id": "C3",
+      "kw": 7.2
+    }
+  ],
+  "vehicles": [
+    {
+      "id": "V1",
+      "arrival": 0,
+      "deadline": 1,
+      "kwh": 12.96,
+      "max_kw": 7.2,
+      "compatible": [
+        "C1",
+        "C2"
+      ]
+    },
+    {
+      "id": "V2",
+      "arrival": 1,
+      "deadline": 24,
+      "kwh": 19.44,
+      "max_kw": 7.2,
+      "compatible": [
+        "C2",
+        "C3"
+      ]
+    },
+    {
+      "id": "V3",
+      "arrival": 2,
+      "deadline": 26,
+      "kwh": 12.96,
+      "max_kw": 7.2,
+      "compatible": [
+        "C1",
+        "C3"
+      ]
+    },
+    {
+      "id": "V4",
+      "arrival": 4,
+      "deadline": 28,
+      "kwh": 9.72,
+      "max_kw": 7.2,
+      "compatible": [
+        "C1",
+        "C2",
+        "C3"
+      ]
+    },
+    {
+      "id": "V5",
+      "arrival": 6,
+      "deadline": 24,
+      "kwh": 16.2,
+      "max_kw": 7.2,
+      "compatible": [
+        "C1",
+        "C2",
+        "C3"
+      ]
+    },
+    {
+      "id": "V6",
+      "arrival": 8,
+      "deadline": 28,
+      "kwh": 9.72,
+      "max_kw": 7.2,
+      "compatible": [
+        "C1",
+        "C2",
+        "C3"
+      ]
+    }
+  ],
+  "assumptions": {
+    "provenance": "All operational values are constructed engineering assumptions, not measured NREL/Optimise Prime fleet records.",
+    "operation": "Small overnight delivery-van depot; required energy is dispatcher-supplied battery top-up, not target SOC.",
+    "currency": "USD demo units; synthetic rates, not a quoted utility tariff",
+    "billing": "Single overnight horizon inside October 2026 billing period. Historical peak is already established before this horizon. Only incremental EV bill is claimed; previous period energy consumption is not supplied.",
+    "charging": "Fixed AC power with a reduced final slot; one contiguous visit on one compatible charger; constant efficiency; no taper/V2G/storage.",
+    "movement": "Vehicles may wait unplugged; staff can connect/disconnect at slot boundaries. Travel/setup time is idealized to zero and staff concurrency is not modelled.",
+    "availability": "All listed chargers available for the whole horizon. Disruption fixtures are separate pre-start revisions, not mid-session recovery.",
+    "prediction": "Disabled. All listed deadlines and energy requirements are confirmed. No unplug forecast is substituted for a commitment.",
+    "disruption": "V1 now requires 12.96 battery kWh within 30 minutes; its maximum possible delivery is 3.24 kWh."
+  }
+}
