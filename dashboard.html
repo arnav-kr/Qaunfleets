@@ -33,39 +33,9 @@
         <h1>Overnight charging</h1>
         <p>Your fleet, ready for the next shift.</p>
         <div class="toolbar">
-          <label>Scenario<select id="scenario"></select></label
-          ><button class="primary" id="run">Run plan ↗</button
+          <span class="pill">QCloud prediction → QpiAI Opt scheduling</span
+          ><button class="primary" id="run">Run charging plan ↗</button
           ><button id="download">Export run ↓</button>
-          <details class="settings">
-            <summary>Plan settings</summary>
-            <div class="settings-content">
-              <label
-                >Optimization method<select id="solver">
-                  <option value="opt_qubo">
-                    QpiAI Opt · QUBO / 4 choices per van
-                  </option>
-                  <option value="same_menu_classical">
-                    Classical · Same choice menu
-                  </option>
-                  <option value="full_classical">
-                    Classical · All valid visits
-                  </option>
-                  <option value="qcloud_qaoa">
-                    QCloud · QAOA / circuit demo only
-                  </option>
-                  <option value="earliest_departure">
-                    Earliest-departure heuristic
-                  </option>
-                </select></label
-              ><label
-                >Departure prediction<select id="forecast">
-                  <option value="none">Confirmed deadlines only</option>
-                  <option value="qcloud">QCloud · Quantum features</option>
-                  <option value="classical">Classical ML control</option>
-                </select></label
-              >
-            </div>
-          </details>
         </div>
         <div id="status" role="status">Loading recorded, verified runs…</div>
         <section id="depot" class="tab">
@@ -269,9 +239,8 @@
             <p class="small">
               QUBO is an optimization formulation, not machine learning. This
               local Opt execution is classical exact search or simulated
-              annealing. QCloud also executes depth-one QAOA for the six-bit
-              circuit demo; select that scenario and solver to inspect its
-              measurements.
+              annealing. QCloud supplies the measured prediction features used
+              by the hybrid workflow.
             </p>
           </div>
           <div class="panel">

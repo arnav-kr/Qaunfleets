@@ -30,42 +30,19 @@ function time(slot) {
     timeZone: "Asia/Kolkata",
   }).format(d);
 }
-function selected() {
-  return report.cases.find((x) => x.id === $("scenario").value);
-}
 function saved() {
-  $("slot").min = 0;
   stop();
-  scenario = structuredClone(selected().scenario);
-  $("solver").querySelector("[value=opt_qubo]").textContent =
-    "QpiAI Opt · QUBO / " +
-    (scenario.scenario_id === "quantum_circuit_demo" ? 2 : 4) +
-    " choices per van";
-  result = selected().runs[$("solver").value];
-  if (!result) {
-    $("solver").value = "opt_qubo";
-    result = selected().runs.opt_qubo;
-  }
-  if (
-    $("scenario").value === "tariff_and_peak" &&
-    $("solver").value === "opt_qubo"
-  ) {
-    const final = report.four_way.find(
-      (x) => x.forecast === "qcloud" && x.optimizer === "qpiai_qubo",
-    );
-    if (final) {
-      scenario = structuredClone(final.scenario);
-      result = final.result;
-      $("forecast").value = "qcloud";
-    }
-  }
-  $("input").value = JSON.stringify(scenario, null, 2);
+  const final = report.four_way.find(
+    (x) => x.forecast === "qcloud" && x.optimizer === "qpiai_qubo",
+  );
+  if (!final) throw Error("The recorded hybrid plan is unavailable.");
+  scenario = structuredClone(final.scenario);
+  result = structuredClone(final.result);
+  $("slot").min = 0;
   $("slot").value = 0;
+  $("input").value = JSON.stringify(scenario, null, 2);
   $("status").textContent =
-    "Recorded execution · " +
-    (result.solver || $("solver").selectedOptions[0].text) +
-    " · " +
-    result.status;
+    "Recorded QCloud + Opt execution · " + result.status;
   render();
 }
 function render() {
@@ -408,7 +385,7 @@ function algorithm() {
   $("qcloud").textContent = JSON.stringify(
     result.forecast_evidence || {
       source: "none",
-      note: "Choose QCloud and Run live to execute six-qubit feature circuits for these vehicles.",
+      note: "Run the charging plan to execute six-qubit feature circuits for these vehicles.",
     },
     null,
     2,
@@ -492,8 +469,7 @@ $("slot").oninput = () => {
   stop();
   playback();
 };
-$("scenario").onchange = saved;
-$("solver").onchange = saved;
+
 document.querySelectorAll("[data-tab]").forEach(
   (b) =>
     (b.onclick = () => {
@@ -513,21 +489,10 @@ $("run").onclick = async () => {
     "Executing locally; QCloud / Opt authentication may take a moment…";
   try {
     let d = JSON.parse($("input").value);
-    d.backend =
-      $("solver").value === "qcloud_qaoa"
-        ? "qcloud_qaoa"
-        : $("solver").value === "opt_qubo"
-          ? "qpiai_qubo"
-          : "highs";
-    if ($("solver").value === "earliest_departure")
-      throw Error(
-        "Choose a solver for a live run; heuristic results are available as recorded evidence.",
-      );
-    if ($("solver").value === "full_classical") delete d.profile_limit;
-    else
-      d.profile_limit = scenario.scenario_id === "quantum_circuit_demo" ? 2 : 4;
-    d.forecast_source = $("forecast").value;
-    d.risk_weight = d.forecast_source === "none" ? 0 : 0.25;
+    d.backend = "qpiai_qubo";
+    d.profile_limit = 4;
+    d.forecast_source = "qcloud";
+    d.risk_weight = 0.25;
     let response = await fetch("/solve", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -572,12 +537,6 @@ window.addEventListener("load", () => {
     })
     .then((d) => {
       report = d;
-      d.cases.forEach((c) => {
-        let o = node("option", c.id.replaceAll("_", " "));
-        o.value = c.id;
-        $("scenario").append(o);
-      });
-      $("scenario").value = "tariff_and_peak";
       saved();
       table(
         "comparison",

@@ -168,9 +168,6 @@ function renderEvents(slot) {
 }
 $("inspect-method").onclick = () =>
   document.querySelector("[data-tab=algorithm]").click();
-// Keep solver alternatives available for questions, outside the main demo path.
-const settings = document.querySelector(".settings-content");
-settings.prepend($("scenario").parentElement);
 const nav = document.querySelector("nav");
 const more = document.createElement("details");
 more.innerHTML = "<summary>Evidence & presentation</summary>";
@@ -215,8 +212,6 @@ async function replan(kind) {
     "run",
     "play",
     "slot",
-    "scenario",
-    "solver",
   ];
   controls.forEach((id) => ($(id).disabled = true));
   $("event-status").textContent =
@@ -306,8 +301,6 @@ $("early-event").onclick = () => replan("early");
 $("surge-event").onclick = () => replan("surge");
 $("occupied-event").onclick = () => replan("occupied");
 $("reset-event").onclick = () => {
-  $("scenario").value = "tariff_and_peak";
-  $("solver").value = "opt_qubo";
   saved();
   $("event-status").textContent =
     "Original recorded plan restored; execution history reset.";
