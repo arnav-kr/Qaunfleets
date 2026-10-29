@@ -58,11 +58,13 @@ The terms represent visit cost, exactly one visit per vehicle, charger conflicts
 
 Valid plans are compared using:
 
-$$
-J = \underbrace{\sum_t \tau_t P_{\mathrm{EV},t}\Delta t}_{\text{energy charge}}
-+ \underbrace{r\left[\max(H,P_{\mathrm{site}}^{\max})-\max(H,P_{\mathrm{base}}^{\max})\right]}_{\text{incremental demand charge}}
-+ \underbrace{\lambda\sum_v\max(0,f_v-\tilde d_v)}_{\text{completion preference}}.
-$$
+```math
+\begin{aligned}
+J ={}& \underbrace{\sum_t \tau_t P_{\mathrm{EV},t}\Delta t}_{\text{energy charge}} \\
+&+ \underbrace{r\left[\max(H,P_{\mathrm{site}}^{\max})-\max(H,P_{\mathrm{base}}^{\max})\right]}_{\text{incremental demand charge}} \\
+&+ \underbrace{\lambda\sum_v\max(0,f_v-\tilde d_v)}_{\text{completion preference}}.
+\end{aligned}
+```
 
 Here $\tau_t$ is the tariff, $r$ the demand rate, $H$ the historical peak, $f_v$ the selected finish time and $\tilde d_v$ the preferred finish time in hours. The preference is excluded from the electricity bill. Battery energy is $E_v=\eta\sum_t p_{v,t}\Delta t$, with efficiency $\eta$.
 
