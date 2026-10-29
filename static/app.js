@@ -573,28 +573,6 @@ window.addEventListener("load", () => {
           ]),
         ),
       );
-      table(
-        "fourway",
-        [
-          "Predictor",
-          "Optimizer",
-          "Status",
-          "Ready",
-          "Bill",
-          "Soft preference",
-          "Objective",
-        ],
-        d.four_way.map((x) => [
-          x.forecast,
-          x.optimizer,
-          x.result.status,
-          (x.result.schedule?.length || 0) + "/" + x.scenario.vehicles.length,
-          money(x.result.incremental_bill),
-          money(x.result.soft_preference_cost),
-          money(x.result.optimization_objective),
-        ]),
-      );
-      $("fournote").textContent = d.four_way_note || "";
     })
     .catch((e) => ($("status").textContent = e.message));
 });

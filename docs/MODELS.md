@@ -1,11 +1,19 @@
-# Predictor artifacts
+# Prediction model
 
-`artifacts/four-way/{classical,qml}.joblib` are the saved histogram gradient-boosting model bundles used by the application. `scaler.json` contains training-set feature means and standard deviations only; it contains no session rows. The classical bundle consumes six request-time features; the hybrid bundle consumes twelve measured quantum features.
+The deployed hybrid predictor uses six request-time inputs: sine/cosine of arrival hour, sine/cosine of weekday, declared remaining hours and requested energy. Training-set means and standard deviations scale these inputs into circuit angles:
 
-The exploratory experiment used 4,091 matched NREL workplace-request examples: 2,048 training, 919 tuning and 1,124 previously exposed test examples. The target is observed session-end minus declared-departure time in minutes. This is an unplugging proxy. Test reuse prevents a fresh-holdout claim.
+$$
+\theta_i=\frac{\pi}{3}\operatorname{clip}\left(\frac{x_i-\mu_i}{\sigma_i},-3,3\right).
+$$
 
-Point model: absolute-error loss, 150 iterations, selected from 7/15 leaf nodes on tuning MAE. Early estimate: 10th-percentile quantile loss, 150 iterations, 7 leaves. Both use L2 regularization 10 and random state 42. The quantum feature map is fixed, not variationally trained.
+The fixed six-qubit circuit applies RY/RZ rotations, a CX chain and a second RY layer. Its 512 measured shots produce six Z and six ZZ features. Two histogram gradient-boosted regressors estimate the typical and 10th-percentile offset:
 
-The repository supports reproducing inference, scheduling and mathematical checks from the supplied artifacts. It does not contain the historical data preparation/training experiment or raw data, so it is not a complete training-reproduction package. Recorded operational scenarios are synthetic and contain no original driver identifiers. Inspect JSON evidence for the exact scenario, solver parameters and outputs.
+$$
+y=t_{\mathrm{session\ end}}-t_{\mathrm{declared\ departure}}.
+$$
 
-Only load the bundled, trusted joblib files: deserializing untrusted joblib/pickle files can execute code.
+The point estimator uses absolute-error loss and 15 leaf nodes; the early estimator uses quantile loss and 7 leaf nodes. Both use 150 iterations, L2 regularization 10 and seed 42. Circuit parameters are fixed rather than trained.
+
+The model was fitted on NREL workplace requests, not commercial fleet operations. Session end is an unplugging proxy. Existing test data was reused during development, so no fresh-holdout or fleet-generalization claim is supported.
+
+Bundled model artifacts support inference and scheduling. Raw records and full training preparation are not distributed. Only load the supplied trusted joblib files; untrusted serialized models can execute code.

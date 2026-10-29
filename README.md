@@ -1,6 +1,6 @@
 # Qaunfleets
 
-Grid-constrained EV charging with quantum-derived prediction features and QUBO scheduling. The local dashboard shows vehicle allocations, charging progress, site demand, tariffs, validation and execution evidence.
+EV fleet charging under departure deadlines and site power limits. QCloud-derived predictions inform completion preferences; QpiAI Opt selects charger and time allocations. The dashboard shows the plan, tariffs, loading, bill and validation.
 
 ## Run
 
@@ -11,37 +11,60 @@ uv sync --locked
 uv run planner_server.py --port 8767
 ```
 
-Open http://127.0.0.1:8767. Recorded runs work without credentials. For live QpiAI execution, copy `.env.example` to `.env` and supply your own keys. SDK authentication may require network access; computation runs locally. The server binds to localhost and is a demonstration application, not a production service.
+Open http://127.0.0.1:8767. Recorded execution is available without credentials. For live execution, copy `.env.example` to `.env` and supply your QpiAI keys. Authentication may require network access; computation runs locally. The server binds to localhost.
 
 ## Architecture
 
-```text
-Requests, chargers, tariffs and site limits
-    → QCloud feature circuit → gradient-boosted unplug-time estimates
-    → valid charging visits → QUBO peak-ceiling sweep → QpiAI Opt
-    → independent validation → dashboard and downloadable evidence
+```mermaid
+flowchart LR
+    Requests[Vehicle requests] --> QCloud[QCloud feature circuit]
+    QCloud --> Predictor[Gradient-boosted unplug-time prediction]
+    Requests --> Visits[Valid charging visits]
+    Predictor -->|Completion preference| Visits
+    Inputs[Chargers, tariffs and site limits] --> Visits
+    Visits --> QUBO[QUBO peak-ceiling sweep]
+    QUBO --> Opt[QpiAI Opt local solver]
+    Opt --> Check[Independent validation]
+    Check --> Dashboard[Schedule, power and bill]
 ```
 
-`product_pipeline.py` coordinates prediction and validation. `scheduler.py` generates compatible, energy-complete charging visits before confirmed departures. `qubo_scheduler.py` encodes visit selection and shared constraints; `opt_backend.py` runs the SDK. `depot_reference.py` independently recomputes physical and financial outcomes. `planner_server.py` serves the interface and `/solve` endpoint.
+QCloud executes a fixed six-qubit RY/RZ/CX circuit with 512 shots per request on `QpiAI-QSV-Local`. Six Z and six ZZ measurements feed histogram gradient-boosted regressors for the typical and 10th-percentile unplug-time offset. Confirmed departures are mandatory; the prediction adds an earlier completion preference.
 
-QCloud runs a fixed six-qubit RY/RZ/CX feature map with 512 shots per request on `QpiAI-QSV-Local`. Six Z and six ZZ measurements feed histogram gradient-boosted regressors for the typical and 10th-percentile unplug-time offset. Gate parameters are not trained. Confirmed departures remain hard constraints; predictions influence an earlier completion preference.
+The scheduler generates energy-complete visits that respect arrivals, departures, charger compatibility and power limits. Up to four alternatives per vehicle enter the QUBO. QpiAI Opt uses local simulated annealing; accepted plans pass separate physical and financial checks.
 
-Opt solves the QUBO locally using simulated annealing. Each binary variable selects one complete vehicle–charger–start-time visit. The default menu retains up to four alternatives per vehicle.
+| Module | Responsibility |
+|---|---|
+| `product_pipeline.py` | Prediction and scheduling orchestration |
+| `qcloud_inference_worker.py` | Quantum feature measurements |
+| `scheduler.py` / `qubo_scheduler.py` | Charging visits and QUBO formulation |
+| `opt_backend.py` | QpiAI Opt execution |
+| `depot_reference.py` | Independent validation |
+| `planner_server.py` / `static/` | Local API and dashboard |
 
-## Objective
+## Formulation
 
-For a candidate peak ceiling B:
+For peak ceiling $B$, binary variable $x_k$ selects charging visit $k$:
 
-```text
-E_B(x,s) = Σ c_k x_k
-         + A Σ_v (Σ_{k∈K_v} x_k − 1)²
-         + A Σ_{(k,l)∈C} x_k x_l
-         + A Σ_t (Σ_k w_kt x_k + s_t − K_t(B))²
-```
+$$
+\begin{aligned}
+E_B(x,s) ={}& \sum_k c_k x_k \\
+&+ A\sum_v\left(\sum_{k\in\mathcal K_v}x_k-1\right)^2 \\
+&+ A\sum_{(k,l)\in\mathcal C}x_kx_l \\
+&+ A\sum_t\left(\sum_k w_{kt}x_k+s_t-K_t(B)\right)^2.
+\end{aligned}
+$$
 
-`c_k` combines tariff cost and a soft late-completion preference. The remaining terms enforce one visit per vehicle, prevent overlapping charger use and constrain site power. `s_t` encodes unused capacity; `K_t(B)` subtracts background demand from the smaller of the feeder limit and B. Invalid solver outputs are rejected.
+The terms represent visit cost, exactly one visit per vehicle, charger conflicts and shared power capacity. $c_k$ includes tariff cost and completion preference; $w_{kt}$ is charging power in integer units; $s_t$ is unused capacity. $K_t(B)$ is the available integer capacity after background load, bounded by the feeder limit and $B$. Penalty $A$ exceeds the upper bound on feasible visit costs. Invalid outputs are rejected.
 
-Across valid plans, minimize energy cost + incremental demand charge + preference cost. Demand charge is `rate × [max(historical peak, site peak) − max(historical peak, background peak)]`. Preference cost is not part of the electricity bill. Delivered battery energy is `efficiency × Σ(power × slot duration)`.
+Valid plans are compared using:
+
+$$
+J = \underbrace{\sum_t \tau_t P_{\mathrm{EV},t}\Delta t}_{\text{energy charge}}
++ \underbrace{r\left[\max(H,P_{\mathrm{site}}^{\max})-\max(H,P_{\mathrm{base}}^{\max})\right]}_{\text{incremental demand charge}}
++ \underbrace{\lambda\sum_v\max(0,f_v-\tilde d_v)}_{\text{completion preference}}.
+$$
+
+Here $\tau_t$ is the tariff, $r$ the demand rate, $H$ the historical peak, $f_v$ the selected finish time and $\tilde d_v$ the preferred finish time in hours. The preference is excluded from the electricity bill. Battery energy is $E_v=\eta\sum_t p_{v,t}\Delta t$, with efficiency $\eta$.
 
 ## Validation and scope
 
@@ -53,12 +76,12 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-Recorded synthetic scenarios and execution evidence are included. Trained predictors use NREL workplace-session data; raw sessions are excluded. Unplugging is not verified fleet departure, and workplace-to-fleet generalization remains unvalidated. Models are trusted local joblib artifacts; do not load replacements from untrusted sources.
+The supplied depot scenarios are synthetic. The predictor uses NREL workplace-session data; unplugging is a departure proxy, and fleet generalization remains unvalidated. Raw sessions are excluded. See [model details](docs/MODELS.md) and [validation](docs/VALIDATION.md).
 
-The interface supports full-horizon early-departure and building-load what-if replanning, not an online controller. Charging uses one contiguous visit per vehicle. The separate six-qubit QAOA experiment is circuit-scale only. No physical quantum hardware or quantum superiority is demonstrated. `docs/MODELS.md` describes model provenance and reproduction boundaries.
+Charging uses one contiguous visit per vehicle. Early-departure and building-load changes trigger full-horizon what-if replanning, not online control. Execution uses a quantum simulator and a classical QUBO solver; no physical-hardware or quantum-advantage claim is made.
 
 ## License and credits
 
-Original code: **AGPL-3.0-only**; see [LICENSE](LICENSE). Network use of modified versions carries source-availability obligations under the license. Third-party components retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Original code is **AGPL-3.0-only**; see [LICENSE](LICENSE). Modified network-accessible versions must meet its corresponding-source obligations. Third-party licenses remain in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-QpiAI QCloud supplies quantum circuit simulation; QpiAI Opt supplies local QUBO solving. Classical references use SciPy/HiGHS and scikit-learn. Visualization uses Three.js and Apache ECharts. Vehicle and depot geometry are generated by this project.
+Built with **QpiAI QCloud** for circuit simulation and **QpiAI Opt** for QUBO solving, alongside scikit-learn, SciPy/HiGHS, Three.js and Apache ECharts. Depot and vehicle geometry are generated by the project.
