@@ -8,6 +8,8 @@ import numpy as np
 
 from qubo_scheduler import build_qubo, slack_weights, valid_selection
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 def main():
     checks = []
@@ -51,7 +53,7 @@ def main():
     assert not valid_selection(d, conflict, [1, 1], 3)
     assert m["offset"] + sum(m["q"].values()) > 0.2 + m["penalty"] - 0.00001
     checks.append("Charger conflict cannot be hidden by adequate feeder capacity")
-    out = Path("artifacts/shipping")
+    out = ROOT / "artifacts/shipping"
     out.mkdir(exist_ok=True, parents=True)
     (out / "math_checks.json").write_text(json.dumps({"passed": True, "checks": checks}, indent=2))
     print(json.dumps(checks))

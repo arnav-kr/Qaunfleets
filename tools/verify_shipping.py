@@ -7,10 +7,12 @@ from depot_reference import digest, validate
 from ising_encoding import coefficients
 from product_pipeline import run
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 def main():
-    report = json.loads(Path("artifacts/shipping/benchmark.json").read_text())
-    demo = json.loads(Path("artifacts/shipping/quantum_demo.json").read_text())
+    report = json.loads((ROOT / "artifacts/shipping/benchmark.json").read_text())
+    demo = json.loads((ROOT / "artifacts/shipping/quantum_demo.json").read_text())
     checks = []
     for case in report["cases"] + [demo]:
         for name, r in case["runs"].items():
@@ -55,7 +57,7 @@ def main():
     r = run(dict(d, backend="highs", forecast_source="none"))
     assert all(f["predicted_disconnect"] is None for f in r["forecasts"])
     checks.append("Confirmed-only route produces no invented predictions")
-    Path("artifacts/shipping/acceptance.json").write_text(
+    (ROOT / "artifacts/shipping/acceptance.json").write_text(
         json.dumps({"passed": True, "count": len(checks), "checks": checks}, indent=2)
     )
     print("Shipping acceptance checks passed:", len(checks))

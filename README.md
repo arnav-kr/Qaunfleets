@@ -72,8 +72,8 @@ Here $\tau_t$ is the tariff, $r$ the demand rate, $H$ the historical peak, $f_v$
 
 ```sh
 uv run pytest
-uv run verify_qubo.py
-uv run verify_shipping.py
+uv run python -m tools.verify_qubo
+uv run python -m tools.verify_shipping
 uv run ruff check .
 uv run ruff format --check .
 ```

@@ -4,6 +4,8 @@ from pathlib import Path
 from depot_reference import greedy
 from product_pipeline import run
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 def main():
     d = {
@@ -48,7 +50,8 @@ def main():
         entry["runs"][label] = r
         print(label, r["status"], r.get("incremental_bill"), flush=True)
     entry["runs"]["earliest_departure"] = greedy(d)
-    path = Path("artifacts/shipping/quantum_demo.json")
+    path = ROOT / "artifacts/shipping/quantum_demo.json"
+    path.parent.mkdir(exist_ok=True, parents=True)
     path.write_text(json.dumps(entry, indent=2))
 
 

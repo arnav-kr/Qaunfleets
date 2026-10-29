@@ -7,7 +7,7 @@ from pathlib import Path
 from depot_reference import greedy
 from product_pipeline import run
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "artifacts/shipping"
 
 
