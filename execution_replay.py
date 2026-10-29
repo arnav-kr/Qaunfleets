@@ -118,6 +118,22 @@ def replan(request):
         scenario.setdefault("charger_blocks", []).append(
             {"charger": charger, "start": now, "end": end}
         )
+    elif kind == "release":
+        charger = event["charger"]
+        if charger not in {c["id"] for c in scenario["chargers"]}:
+            raise ValueError("Provide a known charger")
+        active = [
+            b
+            for b in scenario.get("charger_blocks", [])
+            if b["charger"] == charger and b["start"] <= now < b["end"]
+        ]
+        if not active:
+            raise ValueError("This charger has no active bay hold")
+        for block in active:
+            block["end"] = now
+        scenario["charger_blocks"] = [
+            b for b in scenario["charger_blocks"] if b["end"] > b["start"]
+        ]
     elif kind == "load":
         delta = float(event["delta_kw"])
         end = event["until"]
@@ -192,11 +208,18 @@ def replan(request):
         )
     if predictions:
         future.update(prediction_mode="model", risk_weight=scenario.get("risk_weight", 0.25))
-    outcome = (
-        solve(future, predictions or None)
-        if future["vehicles"]
-        else {"status": "complete", "schedule": [], "seconds": 0}
-    )
+    try:
+        outcome = (
+            solve(future, predictions or None)
+            if future["vehicles"]
+            else {"status": "complete", "schedule": [], "seconds": 0}
+        )
+    except Exception:
+        outcome = {
+            "status": "solver_error",
+            "schedule": [],
+            "reasons": ["Event recorded; future solver failed. Future EV charging is held."],
+        }
     future_found = not future["vehicles"] or bool(outcome.get("schedule"))
     combined = historical[:]
     for segment in outcome.get("schedule", []):

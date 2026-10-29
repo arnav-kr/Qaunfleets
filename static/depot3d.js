@@ -21,14 +21,14 @@ const ray = new THREE.Raycaster(),
 const mat = (color, extra = {}) =>
   new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra });
 const palettes = {
-  ground: mat("#dce5db"),
-  road: mat("#536561"),
-  cream: mat("#e6e4d9"),
-  roof: mat("#587d76"),
+  ground: mat("#d9dce0"),
+  road: mat("#555d66"),
+  cream: mat("#e4e5e7"),
+  roof: mat("#647385"),
   glass: mat("#385463"),
   green: mat("#6fa37c"),
   yellow: mat("#f7d679"),
-  dark: mat("#263e37"),
+  dark: mat("#303944"),
   light: mat("#e9f3d6", { emissive: "#dae6a4", emissiveIntensity: 0.5 }),
 };
 function box(w, h, d, x, y, z, material, parent = world) {
@@ -54,7 +54,7 @@ function label(text, cls) {
   host.append(e);
   return e;
 }
-let hud, detail, hint, loading;
+let hud, detail, hint, loading, stationBoard, hovered;
 function setup() {
   host.replaceChildren();
   host.className = "depot-webgl";
@@ -97,29 +97,59 @@ function setup() {
   scene.add(sun);
   hud = label("", "three-hud");
   detail = label("", "three-detail hidden");
-  hint = label(
-    "Drag to orbit Â· Right-drag to pan Â· Scroll to zoom",
-    "three-hint",
-  );
+  hint = label("Orbit: drag · Pan: right-drag · Zoom: scroll", "three-hint");
   loading = label("Loading delivery vehicles…", "three-loading");
+  stationBoard = label("", "three-stations");
   const buttons = document.createElement("div");
   buttons.className = "three-tools";
   host.append(buttons);
   for (let [text, action] of [
     ["+", () => zoom(0.8)],
-    ["âˆ’", () => zoom(1.25)],
+    ["−", () => zoom(1.25)],
     ["Reset", reset],
+    [
+      "Top-down",
+      () => {
+        camera.position.set(0, 75, 2.01);
+        controls.target.set(0, 0, 2);
+        controls.update();
+      },
+    ],
   ]) {
     let b = document.createElement("button");
     b.textContent = text;
     b.setAttribute(
       "aria-label",
-      text === "+" ? "Zoom in" : text === "âˆ’" ? "Zoom out" : "Reset camera",
+      text === "+"
+        ? "Zoom in"
+        : text === "−"
+          ? "Zoom out"
+          : text === "Top-down"
+            ? "Top-down"
+            : "Reset camera",
     );
     b.onclick = action;
     buttons.append(b);
   }
   let start;
+  renderer.domElement.addEventListener("pointermove", (e) => {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.set(
+      ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      1 - ((e.clientY - rect.top) / rect.height) * 2,
+    );
+    ray.setFromCamera(mouse, camera);
+    let object = ray.intersectObjects(
+      vehicles.map((v) => v.model),
+      true,
+    )[0]?.object;
+    while (object && !object.userData.vehicle) object = object.parent;
+    hovered = object?.userData.vehicle;
+    renderer.domElement.style.cursor = hovered ? "pointer" : "grab";
+  });
+  renderer.domElement.addEventListener("pointerleave", () => {
+    hovered = null;
+  });
   renderer.domElement.addEventListener(
     "pointerdown",
     (e) => (start = [e.clientX, e.clientY]),
@@ -142,6 +172,9 @@ function setup() {
       while (o && !o.userData.vehicle) o = o.parent;
       if (o) {
         selected = o.userData.vehicle;
+        window.dispatchEvent(
+          new CustomEvent("depot-select", { detail: selected }),
+        );
         updateDetail();
       }
     }
@@ -165,7 +198,10 @@ function setup() {
       p.project(camera);
       v.label.style.left = (p.x * 0.5 + 0.5) * host.clientWidth + "px";
       v.label.style.top = (-p.y * 0.5 + 0.5) * host.clientHeight + "px";
-      v.label.style.display = p.z > 1 || p.z < -1 ? "none" : "";
+      v.label.style.display =
+        p.z > 1 || p.z < -1 || (v.id !== selected && v.id !== hovered)
+          ? "none"
+          : "";
     });
     renderer.render(scene, camera);
   }
@@ -249,6 +285,28 @@ function zoom(f) {
   camera.position.copy(controls.target).add(p);
   controls.update();
 }
+function bayMark(text, x, z) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 128;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#e7e9ed";
+  ctx.font = "bold 88px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(text, 128, 100);
+  const texture = new THREE.CanvasTexture(canvas);
+  const mark = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.4, 1.2),
+    new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      depthWrite: false,
+    }),
+  );
+  mark.rotation.x = -Math.PI / 2;
+  mark.position.set(x, 0.075, z);
+  world.add(mark);
+}
 function build(data) {
   if (world) {
     scene.remove(world);
@@ -296,7 +354,46 @@ function build(data) {
       z - 2.63,
       mat("#688e76", { emissive: "#6fb86d", emissiveIntensity: 0 }),
     );
-    chargers.push({ id: c.id, x, z, lamp });
+    const display = label("", "three-station");
+    stationBoard.append(display);
+    display.style.setProperty("--station-index", i);
+    display.style.setProperty("--station-count", data.chargers.length);
+    display.setAttribute("aria-label", c.id + " charging station");
+    labels.push(display);
+    const screen = document.createElement("canvas");
+    screen.width = 256;
+    screen.height = 128;
+    const screenTexture = new THREE.CanvasTexture(screen);
+    const lcd = box(
+      0.58,
+      0.3,
+      0.045,
+      x + 1.8,
+      1.4,
+      z - 2.61,
+      new THREE.MeshBasicMaterial({ map: screenTexture }),
+    );
+    const feedline = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-width / 2 + 2, 0.09, -6),
+        new THREE.Vector3(-width / 2 + 2, 0.09, -8.5),
+        new THREE.Vector3(x + 1.8, 0.09, -8.5),
+        new THREE.Vector3(x + 1.8, 0.09, z - 3),
+      ]),
+      new THREE.LineBasicMaterial({ color: "#88929e" }),
+    );
+    world.add(feedline);
+    chargers.push({
+      id: c.id,
+      x,
+      z,
+      lamp,
+      display,
+      screen,
+      screenTexture,
+      feedline,
+    });
+    bayMark(c.id, x, z + 2.1);
   });
   for (let i = 0; i < data.vehicles.length; i++) {
     let x = ((i % 3) - 1) * 7,
@@ -308,18 +405,6 @@ function build(data) {
   box(2, 2.5, 1.6, -width / 2 + 2, 1.25, -6, palettes.roof);
   for (let y = 0.5; y < 2; y += 0.25)
     box(1.5, 0.08, 0.04, -width / 2 + 2, y, -5.18, palettes.dark);
-  for (let z of [-7, 7, depth / 2]) {
-    for (let x of [-width / 2 + 0.8, width / 2 - 0.8]) {
-      cylinder(0.18, 1.1, x, 0.55, z, palettes.dark);
-      let crown = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(1.15, 0),
-        palettes.green,
-      );
-      crown.position.set(x, 2.1, z);
-      crown.castShadow = true;
-      world.add(crown);
-    }
-  }
   for (let x of [-width / 2 + 1, width / 2 - 1]) {
     cylinder(0.07, 6, x, 3, 1, palettes.cream);
     box(1.1, 0.18, 0.45, x, 6, 1, palettes.light);
@@ -348,9 +433,9 @@ function build(data) {
     world.add(group);
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(2.35, 2.48, 48),
-      mat("#b9ef71", {
+      mat("#8ca9ca", {
         side: THREE.DoubleSide,
-        emissive: "#77ad43",
+        emissive: "#607f9f",
         emissiveIntensity: 0.5,
       }),
     );
@@ -367,6 +452,9 @@ function build(data) {
     tag.append(name, bar);
     tag.onclick = () => {
       selected = v.id;
+      window.dispatchEvent(
+        new CustomEvent("depot-select", { detail: selected }),
+      );
       updateDetail();
     };
     host.append(tag);
@@ -404,23 +492,38 @@ function updateDetail() {
   let h = document.createElement("h3");
   h.textContent = v.id + " / " + s.state;
   detail.append(h);
-  let a =
-      plan.execution_evidence?.attempts?.[
-        plan.execution_evidence.selected_attempt
-      ],
-    bit = plan.execution_evidence?.profile_menu?.find(
-      (b) =>
-        b.vehicle === v.id &&
-        b.charger === s.p?.charger &&
-        b.start_slot === s.p?.start_slot &&
-        a?.bits[b.bit] > 0.5,
-    );
+  const forecast = plan.forecasts?.find((f) => f.vehicle === v.id);
   for (let [k, value] of [
     ["Delivered", s.energy.toFixed(1) + " / " + v.kwh.toFixed(1) + " kWh"],
     ["Power now", (s.p?.grid_kw_by_slot[slot] || 0).toFixed(1) + " kW"],
-    ["Departure", formatTime(v.deadline)],
-    ["Charger", s.p?.charger || "No accepted allocation"],
-    ["QUBO choice", bit ? "x" + bit.bit + " = 1" : "Not used"],
+    ["Confirmed departure", formatTime(v.deadline)],
+    [
+      "Until departure",
+      slot >= (v.actual_departure ?? v.deadline)
+        ? "Departed"
+        : (((v.deadline - slot) * data.slot_minutes) / 60).toFixed(1) + " h",
+    ],
+    [
+      "Predicted unplug",
+      forecast?.predicted_disconnect
+        ? new Date(forecast.predicted_disconnect).toLocaleTimeString("en-GB", {
+            timeZone: "Asia/Kolkata",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "Unavailable",
+    ],
+    [
+      "Charger now",
+      s.p?.charger_by_slot?.[slot] ||
+        (s.charging ? s.p?.charger : "Not charging"),
+    ],
+    [
+      "Actual departure",
+      v.actual_departure !== undefined
+        ? formatTime(v.actual_departure)
+        : "Not observed",
+    ],
   ]) {
     let row = document.createElement("div");
     row.className = "iso-field";
@@ -474,7 +577,9 @@ function update(data, plan, slot, formatTime, animateMotion = false) {
       : slot < spec.arrival
         ? "Not arrived"
         : slot >= (spec.actual_departure ?? spec.deadline)
-          ? "Dispatched"
+          ? ready
+            ? "Departed"
+            : "Departed short"
           : v.charging
             ? "Charging"
             : ready
@@ -567,7 +672,7 @@ function update(data, plan, slot, formatTime, animateMotion = false) {
           6,
           false,
         ),
-        mat("#b9ef71", { emissive: "#5ca348", emissiveIntensity: 0.5 }),
+        mat("#8ca9ca", { emissive: "#607f9f", emissiveIntensity: 0.5 }),
       );
       mesh.visible = !v.motion;
       v.cable = mesh;
@@ -576,12 +681,52 @@ function update(data, plan, slot, formatTime, animateMotion = false) {
     }
   });
   chargers.forEach((c) => {
-    let active = vehicles.some((v) => v.charging && v.p.charger === c.id);
+    let active = (plan.schedule || []).some(
+      (row) =>
+        row.grid_kw_by_slot?.[slot] > 0 &&
+        (row.charger_by_slot?.[slot] || row.charger) === c.id,
+    );
     const occupied = (data.charger_blocks || []).some(
       (b) => b.charger === c.id && b.start <= slot && slot < b.end,
     );
     c.lamp.material.emissive.set(occupied ? "#d98c22" : "#6fb86d");
     c.lamp.material.emissiveIntensity = occupied ? 3 : active ? 2 : 0;
+    const power = (plan.schedule || []).reduce((sum, row) => {
+      const charger =
+        row.charger_by_slot?.[slot] ||
+        (row.grid_kw_by_slot?.[slot] > 0 ? row.charger : null);
+      return sum + (charger === c.id ? row.grid_kw_by_slot[slot] : 0);
+    }, 0);
+    c.feedline.material.color.set(power > 0 ? "#557fae" : "#88929e");
+    c.display.replaceChildren();
+    const name = document.createElement("span");
+    name.textContent = c.id;
+    const reading = document.createElement("strong");
+    reading.textContent = power.toFixed(1);
+    const units = document.createElement("small");
+    units.textContent = "kW";
+    const status = document.createElement("span");
+    status.className = "station-status";
+    status.textContent = occupied
+      ? "Bay held"
+      : power > 0
+        ? "Charging"
+        : "Idle";
+    c.display.dataset.state = occupied
+      ? "held"
+      : power > 0
+        ? "charging"
+        : "idle";
+    c.display.append(name, reading, units, status);
+    const ctx = c.screen.getContext("2d");
+    ctx.fillStyle = "#253c57";
+    ctx.fillRect(0, 0, 256, 128);
+    ctx.fillStyle = "#edf4ff";
+    ctx.font = "bold 48px monospace";
+    ctx.fillText(`${c.id} ${power.toFixed(1)}`, 8, 65);
+    ctx.font = "28px sans-serif";
+    ctx.fillText(occupied ? "Unavailable" : "kW", 8, 108);
+    c.screenTexture.needsUpdate = true;
   });
   let load = plan.aggregate_site_kw?.[slot];
   const blocked = (data.charger_blocks || [])
@@ -593,16 +738,17 @@ function update(data, plan, slot, formatTime, animateMotion = false) {
       : load.toFixed(1) + " / " + data.capacity_kw + " kW";
   if (blocked.length) hud.textContent += " · Occupied: " + blocked.join(", ");
   updateDetail();
-  loading.classList.add("hidden");
+  loading.hidden = true;
   host.dataset.ready = "true";
   host.dataset.vehicleCount = vehicles.length;
 }
 function createDeliveryVan() {
   const van = new THREE.Group();
-  const body = mat("#f1f0e5"),
+  const body = mat("#eeeef0"),
     windowMaterial = mat("#385463"),
     rubber = mat("#25302d"),
-    trim = mat("#47866c");
+    trim = mat("#526c89");
+  body.userData.vehicleBody = true;
   box(1.8, 1.8, 2.8, 0, 1.35, -0.65, body, van);
   box(1.8, 1.35, 1.4, 0, 1.12, 1.4, body, van);
   box(1.55, 0.65, 0.04, 0, 1.5, 2.12, windowMaterial, van);

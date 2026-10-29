@@ -1,18 +1,18 @@
 # Operating assumptions
 
-| Topic | Implemented policy | Boundary |
-|---|---|---|
-| Charging rate | min(charger rating, vehicle limit); reduced final-slot power delivers exact requested energy | No battery taper curve or variable-rate control |
-| Execution | Completed slots replay the previously scheduled power and become immutable at each event | Simulated execution; no physical meter or charger connection |
-| Energy | Remaining request = original battery-side request minus delivered energy | Requested kWh is not measured battery SOC or verified route need |
-| Departures | Confirmed times constrain plans; an actual departure event stops future charging and records unmet energy | Unexpected events must be supplied; no automatic detection |
+| Topic             | Implemented policy                                                                                                   | Boundary                                                                                                                                  |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Charging rate     | min(charger rating, vehicle limit); reduced final-slot power delivers exact requested energy                         | No battery taper curve or variable-rate control                                                                                           |
+| Execution         | Completed slots replay the previously scheduled power and become immutable at each event                             | Simulated execution; no physical meter or charger connection                                                                              |
+| Energy            | Remaining request = original battery-side request minus delivered energy                                             | Requested kWh is not measured battery SOC or verified route need                                                                          |
+| Departures        | Confirmed times constrain plans; an actual departure event stops future charging and records unmet energy            | Unexpected events must be supplied; no automatic detection                                                                                |
 | Charger clearance | Staff relocate vehicles at slot boundaries; explicit occupied-bay events block reuse until the supplied release time | No staffing limits, maneuvering time or path simulation; an occupancy block represents observed unavailability, not a predicted departure |
-| Replanning | Freeze past power and energy costs; optimize only future slots, carrying the achieved peak | A future visit may be moved or resumed; it is not guaranteed to stay connected to its previous charger |
-| Predictions | Reuse arrival-time QCloud-derived preference | Do not apply an arrival-trained predictor to residual energy; no calibrated service guarantee |
-| Solver failure | Reject invalid allocation; hold future EV power at zero and disclose unmet energy | This is not an optimized partial-service recovery policy; failure to find a sample is not proof of infeasibility |
-| Site overload | Report background-only overload even when EV power is zero | EV control cannot remove building demand |
-| Billing | Recompute executed plus planned EV energy and incremental peak charges; separately show incurred energy cost | Demand charges remain a horizon projection, not a finalized monthly invoice |
-| Validation | Separate physical checks from full energy-service compliance | A physically valid replay can still have an early-departure shortfall |
+| Replanning        | Freeze past power and energy costs; optimize only future slots, carrying the achieved peak                           | A future visit may be moved or resumed; it is not guaranteed to stay connected to its previous charger                                    |
+| Predictions       | Reuse arrival-time QCloud-derived preference                                                                         | Do not apply an arrival-trained predictor to residual energy; no calibrated service guarantee                                             |
+| Solver failure    | Reject invalid allocation; hold future EV power at zero and disclose unmet energy                                    | This is not an optimized partial-service recovery policy; failure to find a sample is not proof of infeasibility                          |
+| Site overload     | Report background-only overload even when EV power is zero                                                           | EV control cannot remove building demand                                                                                                  |
+| Billing           | Recompute executed plus planned EV energy and incremental peak charges; separately show incurred energy cost         | Demand charges remain a horizon projection, not a finalized monthly invoice                                                               |
+| Validation        | Separate physical checks from full energy-service compliance                                                         | A physically valid replay can still have an early-departure shortfall                                                                     |
 
 Events occur at slot boundaries. The UI prevents applying another event before the previous event time. Reset discards the simulated execution branch and restores the recorded scenario. The local API carries replay state in the request; it is not a persistent, authenticated production event store.
 

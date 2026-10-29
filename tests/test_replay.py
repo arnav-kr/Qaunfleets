@@ -56,6 +56,30 @@ def test_occupied_charger_blocks_power_but_preserves_previous_delivery():
     assert out["result"]["validation_report"]["passed"]
 
 
+def test_release_shortens_only_the_future_bay_hold():
+    s, r = fixture()
+    held = apply(s, r, {"type": "occupied", "charger": "C1", "until": 5}, 1)
+    released = apply(held["scenario"], held["result"], {"type": "release", "charger": "C1"}, 2)
+    assert released["scenario"]["charger_blocks"] == [{"charger": "C1", "start": 1, "end": 2}]
+    assert_history(held["result"], released["result"], 2)
+    assert released["result"]["validation_report"]["passed"]
+
+
+def test_solver_failure_records_observed_departure_and_holds_future(monkeypatch):
+    s, r = fixture()
+
+    def fail(*args, **kwargs):
+        raise RuntimeError("solver unavailable")
+
+    monkeypatch.setattr("execution_replay.solve", fail)
+    out = apply(s, r, {"type": "depart_now", "vehicle": "V1"}, 1)
+    assert out["scenario"]["vehicles"][0]["actual_departure"] == 1
+    assert out["result"]["status"] == "safe_hold"
+    assert out["result"]["replay"]["future_solver_status"] == "solver_error"
+    assert_history(r, out["result"], 1)
+    assert all(power == 0 for power in out["result"]["aggregate_ev_kw"][1:])
+
+
 def test_load_change_preserves_energy_cost_and_rechecks_capacity():
     s, r = fixture()
     out = apply(s, r, {"type": "load", "delta_kw": 3, "until": 3})

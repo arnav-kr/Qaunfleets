@@ -10,6 +10,7 @@
 !/uv.lock
 !/dashboard.html
 !/runtime_config.py
+!/execution_logging.py
 !/planner_server.py
 !/product_pipeline.py
 !/scheduler.py
@@ -29,6 +30,7 @@
 !/tools/verify_shipping.py
 !/tools/README.md
 !/docs/
+/docs/OPERATIONAL-SCREEN-SPEC.md
 !/tests/
 !/static/
 !/artifacts/
@@ -49,6 +51,10 @@
 /artifacts/*
 !/artifacts/shipping/
 !/artifacts/four-way/
+!/artifacts/run_logs/
+/artifacts/run_logs/*
+!/artifacts/run_logs/README.md
+!/artifacts/run_logs/submission_qpiai_local.txt
 /artifacts/shipping/*
 !/artifacts/shipping/benchmark.json
 !/artifacts/shipping/quantum_demo.json
@@ -72,6 +78,8 @@ __pycache__/
 *.pyc
 
 !/execution_replay.py
+!/static/operations.js
+!/static/operations.css
 
 # Curated preliminary research only; keep local source captures and datasets private.
 !/research/

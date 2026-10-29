@@ -13,6 +13,8 @@ uv run planner_server.py --port 8767
 
 Open http://127.0.0.1:8767. Recorded execution is available without credentials. For live execution, copy `.env.example` to `.env` and supply your QpiAI keys. Authentication may require network access; computation runs locally. The server binds to localhost.
 
+Website solve and replay requests save their inputs and matching execution evidence as text files in [`artifacts/run_logs/`](artifacts/run_logs/README.md). A reviewed local SDK run is included as [submission evidence](artifacts/run_logs/submission_qpiai_local.txt).
+
 ## Architecture
 
 ```mermaid
@@ -32,14 +34,14 @@ QCloud executes a fixed six-qubit RY/RZ/CX circuit with 512 shots per request on
 
 The scheduler generates energy-complete visits that respect arrivals, departures, charger compatibility and power limits. Up to four alternatives per vehicle enter the QUBO. QpiAI Opt uses local simulated annealing; accepted plans pass separate physical and financial checks.
 
-| Module | Responsibility |
-|---|---|
-| `product_pipeline.py` | Prediction and scheduling orchestration |
-| `qcloud_inference_worker.py` | Quantum feature measurements |
-| `scheduler.py` / `qubo_scheduler.py` | Charging visits and QUBO formulation |
-| `opt_backend.py` | QpiAI Opt execution |
-| `depot_reference.py` | Independent validation |
-| `planner_server.py` / `static/` | Local API and dashboard |
+| Module                               | Responsibility                          |
+| ------------------------------------ | --------------------------------------- |
+| `product_pipeline.py`                | Prediction and scheduling orchestration |
+| `qcloud_inference_worker.py`         | Quantum feature measurements            |
+| `scheduler.py` / `qubo_scheduler.py` | Charging visits and QUBO formulation    |
+| `opt_backend.py`                     | QpiAI Opt execution                     |
+| `depot_reference.py`                 | Independent validation                  |
+| `planner_server.py` / `static/`      | Local API and dashboard                 |
 
 ## Formulation
 

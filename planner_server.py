@@ -4,6 +4,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
+from execution_logging import run_logged
 from execution_replay import replan
 from product_pipeline import run as solve
 from scheduler import EXAMPLE
@@ -60,7 +61,9 @@ class Handler(BaseHTTPRequestHandler):
             request = json.loads(self.rfile.read(size))
             if not isinstance(request, dict):
                 raise ValueError("Scenario must be a JSON object")
-            self.send(200, replan(request) if self.path == "/replan" else solve(request))
+            self.send(
+                200, run_logged(self.path, request, replan if self.path == "/replan" else solve)
+            )
         except (ValueError, KeyError, TypeError) as e:
             self.send(400, {"error": str(e)})
         except Exception:

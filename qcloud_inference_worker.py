@@ -13,6 +13,7 @@ from runtime_config import api_key
 
 def run(angles):
     features = []
+    measurement_counts = []
     with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
         QpiAIQuantumAuth.login(api_key("QPIAI_QCLOUD_API_KEY"))
         for row in angles:
@@ -28,6 +29,7 @@ def run(angles):
             counts = circuit.run(shots=512, device_name="QpiAI-QSV-Local").counts
             if sum(counts.values()) != 512:
                 raise ValueError("Shot count mismatch")
+            measurement_counts.append(counts)
             observables = np.zeros(12)
             for bits, count in counts.items():
                 spin_values = np.array([1 - 2 * int(b) for b in bits.replace(" ", "").zfill(6)])
@@ -36,6 +38,7 @@ def run(angles):
             features.append(observables.tolist())
     return {
         "features": features,
+        "measurement_counts": measurement_counts,
         "backend": "QpiAI-QSV-Local",
         "shots": 512,
         "qubits": 6,

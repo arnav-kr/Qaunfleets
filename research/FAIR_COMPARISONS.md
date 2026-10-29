@@ -16,11 +16,11 @@ All methods receive the teammate's saved hourly sine/cosine values. The deployed
 
 The hybrid circuit was reproduced in PennyLane with 512 shots and shot seed 42. This run was not actual QCloud SDK execution. The VQC used initialization seed 19 and shuffle seed 20261029; both trees used seed 42.
 
-| Approach | Validation MAE (minutes) | Test MAE (minutes) |
-|---|---:|---:|
-| Classical-only | 235.25 | 133.34 |
-| Fixed-circuit hybrid, PennyLane reproduction | 247.20 | 142.18 |
-| Trainable VQC | 247.39 | 149.84 |
+| Approach                                     | Validation MAE (minutes) | Test MAE (minutes) |
+| -------------------------------------------- | -----------------------: | -----------------: |
+| Classical-only                               |                   235.25 |             133.34 |
+| Fixed-circuit hybrid, PennyLane reproduction |                   247.20 |             142.18 |
+| Trainable VQC                                |                   247.39 |             149.84 |
 
 [Metrics](results/single_run_metrics.json), [configuration](results/single_run_config.json), and [paired comparisons](results/single_run_paired_comparisons.json) retain the recorded values. The paired intervals use 5,000 bootstrap resamples of calendar days, preserving within-day dependence. They are conditional on these fitted models and do not capture training-seed variation or possible dependence across days.
 
@@ -30,11 +30,11 @@ The hybrid features were regenerated through the actual QpiAI SDK using `Circuit
 
 Training seeds were 19, 42, 73, 101, and 202. Both VQC initialization and batch shuffle used each seed, explaining why these results differ from the single-run initialization19/shuffle20261029 result. The tree learners used the corresponding seed. The SDK's local wrapper ignores `seed_simulator`; these are five independent uncontrolled shot realizations, not five reproducible quantum shot seeds. The saved protocol explicitly records that limitation.
 
-| Approach | Mean test MAE ± sample SD (minutes) | Test MAE range | Mean validation MAE |
-|---|---:|---:|---:|
-| Classical-only | 133.34 ± 0.00 | 133.34–133.34 | 235.25 |
-| Fixed-circuit hybrid, actual local QCloud SDK | 144.29 ± 1.05 | 142.96–145.77 | 247.67 |
-| Trainable VQC | 154.69 ± 2.99 | 152.01–159.82 | 252.94 |
+| Approach                                      | Mean test MAE ± sample SD (minutes) | Test MAE range | Mean validation MAE |
+| --------------------------------------------- | ----------------------------------: | -------------: | ------------------: |
+| Classical-only                                |                       133.34 ± 0.00 |  133.34–133.34 |              235.25 |
+| Fixed-circuit hybrid, actual local QCloud SDK |                       144.29 ± 1.05 |  142.96–145.77 |              247.67 |
+| Trainable VQC                                 |                       154.69 ± 2.99 |  152.01–159.82 |              252.94 |
 
 Classical-only ranked first, the hybrid second, and the VQC third in all five test comparisons. The classical learner has no effective random variation with these settings and rows; five identical scores are not five independent datasets. Mean ± SD describes run variation, not a confidence interval for future prediction accuracy.
 

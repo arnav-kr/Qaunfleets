@@ -12,12 +12,12 @@ The candidate maps each raw sine/cosine feature to `0.8*x`. Each continuous feat
 
 Target processing remained a training-only RobustScaler, with center 0.0416667 minutes and scale 176.1083333 minutes. The readout scale and bias operate before inverse target scaling. Circuit design, optimizer, loss, stopping, row selection, and target processing stayed fixed between the two VQC branches.
 
-| Preprocessing experiment | Validation MAE (minutes) | Test MAE (minutes) |
-|---|---:|---:|
-| VQC, existing inputs | 247.39 | 149.84 |
-| VQC, candidate inputs | 250.49 | 150.19 |
-| Classical, existing scaled inputs | 234.66 | 138.03 |
-| Classical, candidate inputs | 232.89 | 136.86 |
+| Preprocessing experiment          | Validation MAE (minutes) | Test MAE (minutes) |
+| --------------------------------- | -----------------------: | -----------------: |
+| VQC, existing inputs              |                   247.39 |             149.84 |
+| VQC, candidate inputs             |                   250.49 |             150.19 |
+| Classical, existing scaled inputs |                   234.66 |             138.03 |
+| Classical, candidate inputs       |                   232.89 |             136.86 |
 
 The candidate worsened VQC test MAE by 0.35 minutes, while improving the classical model by 1.17 minutes. Both VQC branches changed their gate parameters and produced 512 finite test predictions. The original control VQC's initial, selected-checkpoint, and final-epoch Huber losses were 0.487487, 0.373331, and 0.349234; candidate values were 0.466724, 0.368979, and 0.360027. Validation selects checkpoints, so lower final training loss does not imply a better selected model.
 
