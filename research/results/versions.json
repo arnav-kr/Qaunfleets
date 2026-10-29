@@ -1,0 +1,6 @@
+{
+  "pennylane": "0.43.3",
+  "numpy": "2.5.4",
+  "pandas": "2.3.3",
+  "scikit-learn": "1.9.1"
+}

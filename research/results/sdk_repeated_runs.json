@@ -1,0 +1,147 @@
+[
+  {
+    "seed": 19,
+    "vqc": {
+      "initial_loss": 0.4874865893627306,
+      "selected_loss": 0.36462492260265,
+      "validation_mae": 250.35667202373884,
+      "best_epoch": 13,
+      "runtime_seconds": 14.519352800001798,
+      "gate_change_l2": 6.621124510924305,
+      "output_scale_bias": [
+        10.18237141546117,
+        -0.5197634883603752
+      ],
+      "finite_predictions": true,
+      "prediction_minimum": -280.36507211772056,
+      "prediction_maximum": 142.50124666023257,
+      "test_mae": 153.5621843850588
+    },
+    "hybrid": {
+      "test_mae": 142.96221611729922,
+      "validation_mae": 247.46274689387553,
+      "training_seconds": 0.43295109999598935
+    },
+    "classical": {
+      "test_mae": 133.33851896707316,
+      "validation_mae": 235.2483012102034,
+      "training_seconds": 0.3537819999983185
+    }
+  },
+  {
+    "seed": 42,
+    "vqc": {
+      "initial_loss": 0.4922183550299323,
+      "selected_loss": 0.3491718675211092,
+      "validation_mae": 243.81701996121382,
+      "best_epoch": 13,
+      "runtime_seconds": 13.82488519999606,
+      "gate_change_l2": 8.764663082489971,
+      "output_scale_bias": [
+        9.7330781885942,
+        -0.31308328664301355
+      ],
+      "finite_predictions": true,
+      "prediction_minimum": -285.09822741452325,
+      "prediction_maximum": 132.3273930033978,
+      "test_mae": 152.00752956888198
+    },
+    "hybrid": {
+      "test_mae": 144.24588255488678,
+      "validation_mae": 247.5953176322018,
+      "training_seconds": 0.3850377999988268
+    },
+    "classical": {
+      "test_mae": 133.33851896707316,
+      "validation_mae": 235.2483012102034,
+      "training_seconds": 0.3592002000004868
+    }
+  },
+  {
+    "seed": 73,
+    "vqc": {
+      "initial_loss": 0.49304009976864543,
+      "selected_loss": 0.46309406291965427,
+      "validation_mae": 255.7718847911213,
+      "best_epoch": 5,
+      "runtime_seconds": 7.36010879999958,
+      "gate_change_l2": 6.713316683252369,
+      "output_scale_bias": [
+        3.246674653235264,
+        -0.6279328939196921
+      ],
+      "finite_predictions": true,
+      "prediction_minimum": -187.96658442473245,
+      "prediction_maximum": 8.771659338272215,
+      "test_mae": 159.81941769714183
+    },
+    "hybrid": {
+      "test_mae": 145.77343639719405,
+      "validation_mae": 246.88075508029954,
+      "training_seconds": 0.3501040000046487
+    },
+    "classical": {
+      "test_mae": 133.33851896707316,
+      "validation_mae": 235.2483012102034,
+      "training_seconds": 0.3286487000004854
+    }
+  },
+  {
+    "seed": 101,
+    "vqc": {
+      "initial_loss": 0.4933524763109471,
+      "selected_loss": 0.43397186573631374,
+      "validation_mae": 260.5078692016176,
+      "best_epoch": 4,
+      "runtime_seconds": 6.8466098999997484,
+      "gate_change_l2": 6.424548695803047,
+      "output_scale_bias": [
+        2.6901455598054334,
+        -0.21787327882054006
+      ],
+      "finite_predictions": true,
+      "prediction_minimum": -152.61250429973245,
+      "prediction_maximum": 28.686380253376875,
+      "test_mae": 154.13084623760346
+    },
+    "hybrid": {
+      "test_mae": 143.7938882135365,
+      "validation_mae": 247.5457525387996,
+      "training_seconds": 0.3665862999987439
+    },
+    "classical": {
+      "test_mae": 133.33851896707316,
+      "validation_mae": 235.2483012102034,
+      "training_seconds": 0.31411279999883845
+    }
+  },
+  {
+    "seed": 202,
+    "vqc": {
+      "initial_loss": 0.49065429487400325,
+      "selected_loss": 0.4197010432785826,
+      "validation_mae": 254.26056089859463,
+      "best_epoch": 9,
+      "runtime_seconds": 10.629479100003664,
+      "gate_change_l2": 7.061179495220195,
+      "output_scale_bias": [
+        4.4558250998287,
+        -0.7586192789806393
+      ],
+      "finite_predictions": true,
+      "prediction_minimum": -227.41473604193285,
+      "prediction_maximum": 57.215870491099274,
+      "test_mae": 153.93741295486456
+    },
+    "hybrid": {
+      "test_mae": 144.69435622995798,
+      "validation_mae": 248.85848487241327,
+      "training_seconds": 0.33199429999513086
+    },
+    "classical": {
+      "test_mae": 133.33851896707316,
+      "validation_mae": 235.2483012102034,
+      "training_seconds": 0.35493870000209427
+    }
+  }
+]

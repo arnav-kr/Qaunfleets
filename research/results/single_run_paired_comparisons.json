@@ -1,0 +1,23 @@
+{
+  "hybrid minus classical": {
+    "mae_difference": 8.845324427896035,
+    "paired_day_bootstrap_95_interval": [
+      0.9969311403275288,
+      16.906257208088054
+    ]
+  },
+  "vqc minus classical": {
+    "mae_difference": 16.50298304562565,
+    "paired_day_bootstrap_95_interval": [
+      7.283605744720005,
+      26.021470164331216
+    ]
+  },
+  "vqc minus hybrid": {
+    "mae_difference": 7.65765861772962,
+    "paired_day_bootstrap_95_interval": [
+      0.6262493003214313,
+      14.443747311159854
+    ]
+  }
+}

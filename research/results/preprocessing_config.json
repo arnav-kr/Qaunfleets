@@ -1,0 +1,11 @@
+{
+  "seed": 20261029,
+  "sample_source": "artifacts\\vqc_reuploading_final_run2\\sample_ids.csv",
+  "train_rows": 2048,
+  "validation_rows": 512,
+  "test_rows": 512,
+  "circuit": "unchanged two-block reuploading VQC",
+  "target_processing": "unchanged training-only RobustScaler",
+  "control_inputs": "training-only MinMaxScaler[-0.8, 0.8]",
+  "experimental_inputs": "cyclical 0.8*x; continuous log1p/signed_log1p -> training-only RobustScaler -> 0.8*tanh(z/2)"
+}

@@ -1,0 +1,56 @@
+{
+  "vqc_control": {
+    "initial_loss": 0.4874865893627306,
+    "selected_loss": 0.3733314836441068,
+    "validation_mae": 247.38858528980109,
+    "best_epoch": 9,
+    "runtime_seconds": 10.926500100002158,
+    "gate_change_l2": 6.7542866038621785,
+    "output_scale_bias": [
+      9.194043720899213,
+      -0.313911625536287
+    ],
+    "finite_predictions": true,
+    "prediction_minimum": -342.1334084453663,
+    "prediction_maximum": 140.7428342279181,
+    "test_mae": 149.8415020126988,
+    "final_epoch_loss": 0.34923407694371267,
+    "finite_prediction_count": 512
+  },
+  "vqc_bounded_inputs": {
+    "initial_loss": 0.46672397737981586,
+    "selected_loss": 0.36897902439090086,
+    "validation_mae": 250.49393377233048,
+    "best_epoch": 10,
+    "runtime_seconds": 11.71219939999719,
+    "gate_change_l2": 6.1582124594346626,
+    "output_scale_bias": [
+      8.960138596989134,
+      -0.512777676725181
+    ],
+    "finite_predictions": true,
+    "prediction_minimum": -274.05603150744076,
+    "prediction_maximum": 137.88189115578058,
+    "test_mae": 150.18914183775712,
+    "final_epoch_loss": 0.3600270829541591,
+    "finite_prediction_count": 512
+  },
+  "classical_control": {
+    "validation_mae": 234.6641182014224,
+    "test_mae": 138.02996510800023,
+    "runtime_seconds": 0.39011959999334067,
+    "finite_predictions": true,
+    "prediction_minimum": -581.3942106158693,
+    "prediction_maximum": 294.92244135753555,
+    "finite_prediction_count": 512
+  },
+  "classical_bounded_inputs": {
+    "validation_mae": 232.89271392874616,
+    "test_mae": 136.85754882601458,
+    "runtime_seconds": 0.3805435000031139,
+    "finite_predictions": true,
+    "prediction_minimum": -596.0295802056395,
+    "prediction_maximum": 322.45233758425155,
+    "finite_prediction_count": 512
+  }
+}

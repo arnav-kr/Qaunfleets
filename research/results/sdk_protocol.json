@@ -1,0 +1,17 @@
+{
+  "training_seeds": [
+    19,
+    42,
+    73,
+    101,
+    202
+  ],
+  "sdk_sampling": "five independent uncontrolled realizations; seed_simulator repeatability check failed",
+  "rows": [
+    2048,
+    512,
+    512
+  ],
+  "shots": 512,
+  "selection": "fixed tree settings; VQC validation only; no test tuning"
+}

@@ -1,0 +1,51 @@
+{
+  "rows": {
+    "train": 2048,
+    "validation": 512,
+    "test": 512
+  },
+  "features": [
+    "request_hour_sin",
+    "request_hour_cos",
+    "weekday_sin",
+    "weekday_cos",
+    "hours_until_declared_departure",
+    "requested_energy_kwh"
+  ],
+  "target": "departure_error_minutes",
+  "sdk": "PennyLane reproduction of published fixed QCloud circuit, not QCloud execution",
+  "shots": 512,
+  "shot_seed": 42,
+  "tree_settings": {
+    "categorical_features": "from_dtype",
+    "early_stopping": "auto",
+    "interaction_cst": null,
+    "l2_regularization": 10,
+    "learning_rate": 0.1,
+    "loss": "absolute_error",
+    "max_bins": 255,
+    "max_depth": null,
+    "max_features": 1.0,
+    "max_iter": 150,
+    "max_leaf_nodes": 15,
+    "min_samples_leaf": 20,
+    "monotonic_cst": null,
+    "n_iter_no_change": 10,
+    "quantile": null,
+    "random_state": 42,
+    "scoring": "loss",
+    "tol": 1e-07,
+    "validation_fraction": 0.1,
+    "verbose": 0,
+    "warm_start": false
+  },
+  "vqc": "unchanged teammate control; initialization seed19, shuffle seed20261029, Adam .08, Huber1, batch64, max15 epochs, patience3",
+  "selection": "VQC validation checkpoint; fixed deployed 15-leaf tree settings, no test tuning",
+  "sample_ids_sha256": "9e70ad35f2802e35db63fe34b98bc210a8b8f3163305aa2f0d58bd3dea12b7b0",
+  "limitations": [
+    "Previously exposed test, exploratory",
+    "Single training and shot seed",
+    "Point prediction comparison only; no scheduling or quantile comparison",
+    "Finite-shot realization differs from QCloud; wire ordering is a consistent feature permutation"
+  ]
+}

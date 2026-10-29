@@ -68,3 +68,26 @@ __pycache__/
 *.pyc
 
 !/execution_replay.py
+
+# Curated preliminary research only; keep local source captures and datasets private.
+!/research/
+/research/*
+!/research/README.md
+!/research/FINDINGS.md
+!/research/FAIR_COMPARISONS.md
+!/research/SDK_NOTES.md
+!/research/results/
+!/research/raw_outputs/
+/research/results/*
+!/research/results/preprocessing_metrics.json
+!/research/results/preprocessing_config.json
+!/research/results/single_run_metrics.json
+!/research/results/single_run_config.json
+!/research/results/single_run_paired_comparisons.json
+!/research/results/sdk_repeated_runs.json
+!/research/results/sdk_summary.json
+!/research/results/sdk_protocol.json
+!/research/results/versions.json
+!/research/results/manifest.json
+/research/raw_outputs/*
+!/research/raw_outputs/QpiAI_RAW_OUTPUT.txt

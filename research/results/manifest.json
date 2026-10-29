@@ -1,0 +1,77 @@
+{
+  "prepared_date": "2026-10-30",
+  "scope": "Recorded exploratory local runs; no experiments rerun during packaging. Source paths are local provenance, not public download links.",
+  "files": [
+    {
+      "path": "results/preprocessing_metrics.json",
+      "source": "isolated/teammate_vqc_20261029/pls_work/artifacts/vqc_preprocessing_verified/metrics.json",
+      "sha256": "c2a7bcc56905784b2907c6c35e0071df2ef74d82572db2a6977183e4b0217062",
+      "source_sha256": "db71ce16ad1597d05ce723df43e9df8f1b3e150f727a17f5d536cfa389c861ee"
+    },
+    {
+      "path": "results/preprocessing_config.json",
+      "source": "isolated/teammate_vqc_20261029/pls_work/artifacts/vqc_preprocessing_verified/experiment_config.json",
+      "sha256": "1ead9aac8234357165b1895935415413392028f384e44d26532dae00f1ef59d2",
+      "source_sha256": "cace0194dc44e591b6233f9d22d2fcb11d947d3c3b2e82086339010f637baf98"
+    },
+    {
+      "path": "results/single_run_metrics.json",
+      "source": "isolated/fair_comparison_20261029/results/metrics.json",
+      "sha256": "f11baeab784fc805c294fc981da7391d1a255643ecc9bb9c68c86531c2bf5911",
+      "source_sha256": "6ac6ffe470c599007f7de1c5cee227a6c74bc5b08d848894a0c56cbdc44ac01f"
+    },
+    {
+      "path": "results/single_run_config.json",
+      "source": "isolated/fair_comparison_20261029/results/config.json",
+      "sha256": "ef4dafbf9addfa69a6ff3041efc8d4e6c9d4436d8107e3c41f7204e380a4e6ff",
+      "source_sha256": "b7c231be4942456ec6cde39c22194691d7cbb1315b6631cf762a0844385de79e"
+    },
+    {
+      "path": "results/single_run_paired_comparisons.json",
+      "source": "isolated/fair_comparison_20261029/results/paired_comparisons.json",
+      "sha256": "93c4ec25e5b27e8cd4c8a67f641d30f913ce6d996d4f0d15f52a0c639e1a5675",
+      "source_sha256": "50ce0de2b973062b22811708c77e087c245bf21961cca3b49cd7a183193eca32"
+    },
+    {
+      "path": "results/sdk_repeated_runs.json",
+      "source": "isolated/qcloud_multiseed_20261029/results/runs.json",
+      "sha256": "9c2c6c3df61d86d9e8b94d9b97a1bb54f43b4c9500d74354e5bf19420d3ee424",
+      "source_sha256": "094dd93f1cd87cc136ef6e6ed3ba5e3f846ccb0d82e5b483a6638bbdd3d38603"
+    },
+    {
+      "path": "results/sdk_summary.json",
+      "source": "isolated/qcloud_multiseed_20261029/results/summary.json",
+      "sha256": "794e767a3a5b5e5425144a334347e81006a0597946e1fc495c919226e1147d71",
+      "source_sha256": "cb61a0a4c8b7623649e6099057b1621b62e1ceafd277c6641be8a67f34b34385"
+    },
+    {
+      "path": "results/sdk_protocol.json",
+      "source": "isolated/qcloud_multiseed_20261029/protocol.json",
+      "sha256": "34b8a15652904529e21cba90ddb04917b10ba5705d632463f13185ebc4fdba51",
+      "source_sha256": "7b26ec7b2883acf7dea8350da9f4716f065c0057bfb806125f8788dd41537c8c"
+    },
+    {
+      "path": "results/versions.json",
+      "source": "isolated/fair_comparison_20261029/results/versions.json",
+      "sha256": "0ac188407aebaf1fa277d5b1d4eb0add24b2187ee00ff00f1262766688390337",
+      "source_sha256": "8af2f9693ee7df74f9d709f19e90b908f22663d027fb31851d90b5cfa137d36e"
+    },
+    {
+      "path": "raw_outputs/QpiAI_RAW_OUTPUT.txt",
+      "source": "isolated/organiser_submission_20261030/QpiAI_RAW_OUTPUT.txt",
+      "sha256": "137b52c3caf7e3520b3b216b460f0a056284f07aaf4b9ab203212d0c140c49af",
+      "source_sha256": "82a5874b545adc5102559692e87a4f40240d42422f8b1c35e8d8505806802ccb"
+    }
+  ],
+  "raw_output_origins": [
+    {
+      "source": "isolated/qcloud_multiseed_20261029/integration.json",
+      "sha256": "4eeb4de618d75c2a6850333158d9456e68932896f442bf58a64ecbb6872ecac5"
+    },
+    {
+      "source": "artifacts/shipping/benchmark.json",
+      "sha256": "9a94c14b4c61fd811ba6d26a3c184c8860fd4edeb43043fa4829ed3ebfe19e61"
+    }
+  ],
+  "hash_convention": "sha256 hashes the Git-normalized exported bytes; source_sha256 hashes the original local source bytes before Git line-ending normalization."
+}

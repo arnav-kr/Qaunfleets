@@ -80,6 +80,8 @@ uv run ruff format --check .
 
 The supplied depot scenarios are synthetic. The predictor uses NREL workplace-session data; unplugging is a departure proxy, and fleet generalization remains unvalidated. Raw sessions are excluded. See [model details](docs/MODELS.md) and [validation](docs/VALIDATION.md).
 
+We also conducted preliminary research on trainable quantum models, input preprocessing, and matched classical comparisons. Methods, findings, limitations, and local QpiAI SDK outputs are documented in [`research/`](research/).
+
 Initial plans use one contiguous visit per vehicle. Slot-boundary execution events freeze delivered energy and past allocations, then replan remaining energy on the future horizon. Early departures report actual shortfalls; occupied bays block charger reuse; load changes update future headroom. A disrupted visit may resume later. See [operating assumptions](docs/ASSUMPTIONS.md). Execution uses a quantum simulator and a classical QUBO solver; no physical-hardware or quantum-advantage claim is made.
 
 ## License and credits
